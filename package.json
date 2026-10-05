@@ -23,7 +23,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "bcrp": "./dist/cli.js"
+    "bcrp": "dist/cli.js"
   },
   "files": [
     "dist",

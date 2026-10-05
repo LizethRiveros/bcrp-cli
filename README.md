@@ -36,6 +36,13 @@ with dates and numbers already normalized.
 
 ## Install
 
+With npm (Node 18+). The package is `@lizethriveros/bcrp-cli` and installs the `bcrp` command:
+
+```bash
+npx @lizethriveros/bcrp-cli fx          # run without installing
+npm install -g @lizethriveros/bcrp-cli  # or install it, then just: bcrp fx
+```
+
 From source (requires [Bun](https://bun.sh) and Node 18+):
 
 ```bash
@@ -107,7 +114,7 @@ four tools: `bcrp_search`, `bcrp_latest`, `bcrp_get` and `bcrp_info`.
 Claude Code:
 
 ```bash
-claude mcp add bcrp -- node /absolute/path/to/bcrp-cli/dist/cli.js mcp
+claude mcp add bcrp -- npx -y @lizethriveros/bcrp-cli mcp
 ```
 
 Claude Desktop / any MCP client (`mcpServers` config):
@@ -116,8 +123,8 @@ Claude Desktop / any MCP client (`mcpServers` config):
 {
   "mcpServers": {
     "bcrp": {
-      "command": "node",
-      "args": ["/absolute/path/to/bcrp-cli/dist/cli.js", "mcp"]
+      "command": "npx",
+      "args": ["-y", "@lizethriveros/bcrp-cli", "mcp"]
     }
   }
 }

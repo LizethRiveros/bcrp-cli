@@ -1,5 +1,5 @@
 {
-  "name": "bcrp-cli",
+  "name": "@lizethriveros/bcrp-cli",
   "version": "0.2.0",
   "description": "Agent-first CLI and MCP server for BCRP (Banco Central de Reserva del Perú) statistics",
   "keywords": [
@@ -21,6 +21,9 @@
   "bugs": "https://github.com/LizethRiveros/bcrp-cli/issues",
   "author": "LizethRiveros",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "bin": {
     "bcrp": "dist/cli.js"

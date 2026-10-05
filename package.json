@@ -1,0 +1,16 @@
+{
+  "name": "bcrp-cli",
+  "version": "0.1.0",
+  "description": "Agent-first CLI for BCRP (Banco Central de Reserva del Perú) statistics",
+  "type": "module",
+  "bin": { "bcrp": "./src/cli.ts" },
+  "scripts": {
+    "dev": "bun run src/cli.ts",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.0"
+  }
+}

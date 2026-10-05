@@ -1,7 +1,7 @@
 const BASE = "https://estadisticas.bcrp.gob.pe/estadisticas/series/api";
 
 export interface Point {
-  /** ISO date (YYYY-MM-DD) for daily series, YYYY-MM for monthly, YYYY for annual; raw label otherwise */
+  /** YYYY-MM-DD (daily), YYYY-MM (monthly), YYYY-Qn (quarterly), YYYY (annual); raw label if unrecognized */
   period: string;
   value: number | null;
 }
@@ -20,7 +20,15 @@ const MONTHS: Record<string, string> = {
   jan: "01", apr: "04", aug: "08", dec: "12",
 };
 
-/** "01.Set.26" -> "2026-09-01", "Set.2026" -> "2026-09", "2026" -> "2026"; unknown labels pass through. */
+function fullYear(y: string): string {
+  return y.length === 2 ? `20${y}` : y;
+}
+
+/**
+ * Normalizes the period labels the API returns:
+ * "01.Set.26" -> "2026-09-01", "Jan.2025" -> "2025-01", "Q1.24"/"T1.24" -> "2024-Q1", "2024" -> "2024".
+ * Unknown labels pass through unchanged.
+ */
 export function normalizePeriod(label: string): string {
   const daily = label.match(/^(\d{1,2})\.([A-Za-z]{3})\.(\d{2,4})$/);
   if (daily) {
@@ -32,11 +40,9 @@ export function normalizePeriod(label: string): string {
     const m = MONTHS[monthly[1]!.toLowerCase()];
     if (m) return `${fullYear(monthly[2]!)}-${m}`;
   }
+  const quarterly = label.match(/^[QqTt]([1-4])\.(\d{2,4})$/);
+  if (quarterly) return `${fullYear(quarterly[2]!)}-Q${quarterly[1]}`;
   return label;
-}
-
-function fullYear(y: string): string {
-  return y.length === 2 ? `20${y}` : y;
 }
 
 export function parseValue(raw: string | undefined): number | null {
@@ -50,6 +56,13 @@ interface RawResponse {
   periods: { name: string; values: string[] }[];
 }
 
+export class BcrpError extends Error {
+  constructor(message: string, readonly code?: string) {
+    super(message);
+    this.name = "BcrpError";
+  }
+}
+
 export async function fetchSeries(
   code: string,
   from: string,
@@ -57,14 +70,25 @@ export async function fetchSeries(
   fetchImpl: typeof fetch = fetch,
 ): Promise<Series> {
   const url = `${BASE}/${encodeURIComponent(code)}/json/${from}/${to}/ing`;
-  const res = await fetchImpl(url);
-  if (!res.ok) throw new Error(`BCRP API error ${res.status} for ${code}`);
+  let res: Response;
+  try {
+    res = await fetchImpl(url, {
+      headers: { "user-agent": "bcrp-cli (+https://github.com/LizethRiveros/bcrp-cli)" },
+      signal: AbortSignal.timeout(30_000),
+    });
+  } catch (e) {
+    throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, code);
+  }
+  if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${code}`, code);
   const text = await res.text();
   let raw: RawResponse;
   try {
     raw = JSON.parse(text);
   } catch {
-    throw new Error(`Series "${code}" not found or invalid date range`);
+    throw new BcrpError(
+      `Series "${code}" not found, or the date range ${from} to ${to} is not valid for it. Try \`bcrp search\` to find series codes.`,
+      code,
+    );
   }
   const s = raw.config.series[0];
   return {

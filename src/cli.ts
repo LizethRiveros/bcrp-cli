@@ -1,93 +1,158 @@
-#!/usr/bin/env bun
-import { fetchSeries, type Series } from "./client";
+#!/usr/bin/env node
+import pkg from "../package.json";
+import { describeSeries, getLatest, getSeries, isSeriesInput, searchSeries } from "./api";
+import { downloadCatalog, encodeCatalog, loadCatalog, saveUserCatalog } from "./catalog";
+import { FREQUENCIES, parseFrequency } from "./dates";
+import { formatInfo, formatLatest, formatSearch, formatSeries, formatShortcuts } from "./format";
+import { SHORTCUTS } from "./shortcuts";
 
-const FX_CODE = "PD04638PD"; // TC interbancario venta
+const HELP = `bcrp ${pkg.version} - BCRP (Banco Central de Reserva del Perú) statistics from the terminal
 
-function today(): Date {
-  return new Date();
+Usage:
+  bcrp <shortcut>                    Latest value of a headline indicator
+  bcrp <shortcut|CODE> --last 12     Recent observations
+  bcrp get <shortcut|CODE> [--from D] [--to D] [--last N]
+  bcrp latest <shortcut|CODE>        Most recent value
+  bcrp search <text> [--freq F] [--limit N]
+  bcrp info <shortcut|CODE>          Describe a series
+  bcrp shortcuts                     List headline indicators
+  bcrp catalog [update]              Show or refresh the local series catalog
+  bcrp mcp                           Run as an MCP server (stdio) for AI agents
+
+Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}
+
+Dates: YYYY, YYYY-MM, YYYY-MM-DD or YYYY-Qn.   Frequencies: ${FREQUENCIES.join(", ")}.
+
+Output: a table in a terminal, JSON when piped. Force with --json / --table.
+
+Examples:
+  bcrp fx
+  bcrp inflation --last 12
+  bcrp search "tasa de interés" --freq monthly
+  bcrp get PD04638PD --from 2026-01 --to 2026-09 --json
+`;
+
+const BOOLEAN_FLAGS = new Set(["json", "table", "help", "version"]);
+const VALUE_FLAGS = new Set(["from", "to", "last", "freq", "limit"]);
+
+interface Parsed {
+  flags: Record<string, string | true>;
+  positional: string[];
 }
 
-function ym(d: Date): string {
-  return `${d.getFullYear()}-${d.getMonth() + 1}`;
-}
-
-function ymd(d: Date): string {
-  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
-}
-
-function parseArgs(argv: string[]) {
-  const flags: Record<string, string | boolean> = {};
+function parseArgs(argv: string[]): Parsed {
+  const flags: Record<string, string | true> = {};
   const positional: string[] = [];
   for (let i = 0; i < argv.length; i++) {
-    const a = argv[i]!;
-    if (a.startsWith("--")) {
-      const key = a.slice(2);
-      const next = argv[i + 1];
-      if (next !== undefined && !next.startsWith("--")) {
-        flags[key] = next;
-        i++;
-      } else flags[key] = true;
-    } else positional.push(a);
+    const arg = argv[i]!;
+    if (arg === "-h") flags.help = true;
+    else if (arg === "-v") flags.version = true;
+    else if (arg.startsWith("--")) {
+      const [key, inline] = arg.slice(2).split(/=(.*)/s, 2) as [string, string | undefined];
+      if (BOOLEAN_FLAGS.has(key)) flags[key] = true;
+      else if (VALUE_FLAGS.has(key)) {
+        const value = inline ?? argv[++i];
+        if (value === undefined) throw new UsageError(`--${key} needs a value`);
+        flags[key] = value;
+      } else throw new UsageError(`Unknown option --${key}`);
+    } else positional.push(arg);
   }
   return { flags, positional };
 }
 
-function print(series: Series, json: boolean) {
-  if (json) {
-    console.log(JSON.stringify(series, null, 2));
-    return;
-  }
-  console.log(`${series.name} (${series.code})`);
-  for (const p of series.points) {
-    console.log(`${p.period}\t${p.value === null ? "n.d." : p.value.toFixed(series.decimals)}`);
-  }
+class UsageError extends Error {}
+
+function intFlag(flags: Parsed["flags"], key: string): number | undefined {
+  const v = flags[key];
+  if (v === undefined) return undefined;
+  const n = Number(v);
+  if (!Number.isInteger(n) || n < 1) throw new UsageError(`--${key} must be a positive integer`);
+  return n;
 }
 
-const HELP = `bcrp - BCRP statistics from the terminal
-
-Usage:
-  bcrp fx [--json]                         Latest interbank USD/PEN exchange rate
-  bcrp get <CODE> [--from YYYY-M[-D]] [--to YYYY-M[-D]] [--json]
-
-Examples:
-  bcrp fx
-  bcrp get PD04638PD --from 2026-9-1 --to 2026-9-30 --json
-`;
+function strFlag(flags: Parsed["flags"], key: string): string | undefined {
+  const v = flags[key];
+  return typeof v === "string" ? v : undefined;
+}
 
 async function main() {
   const { flags, positional } = parseArgs(process.argv.slice(2));
-  const [cmd, arg] = positional;
-  const json = flags.json === true;
+  const [cmd, ...rest] = positional;
 
-  if (!cmd || cmd === "help" || flags.help) {
-    console.log(HELP);
-    return;
+  const json = flags.json === true || (flags.table !== true && !process.stdout.isTTY);
+  const out = (data: unknown, text: () => string) => console.log(json ? JSON.stringify(data, null, 2) : text());
+
+  if (flags.version) return console.log(pkg.version);
+  if (!cmd || cmd === "help" || flags.help) return console.log(HELP);
+
+  const hasRange = flags.from !== undefined || flags.to !== undefined || flags.last !== undefined;
+  const query = () => ({
+    from: strFlag(flags, "from"),
+    to: strFlag(flags, "to"),
+    last: intFlag(flags, "last"),
+  });
+
+  const series = async (input: string | undefined) => {
+    if (!input) throw new UsageError("Missing series. Pass a shortcut (fx, inflation, ...) or a series code.");
+    if (hasRange) {
+      const s = await getSeries({ series: input, ...query() });
+      out(s, () => formatSeries(s));
+    } else {
+      const l = await getLatest(input);
+      out(l, () => formatLatest(l));
+    }
+  };
+
+  switch (cmd) {
+    case "get": {
+      const input = rest[0];
+      if (!input) throw new UsageError("Usage: bcrp get <shortcut|CODE> [--from D] [--to D] [--last N]");
+      const s = await getSeries({ series: input, ...query() });
+      return out(s, () => formatSeries(s));
+    }
+    case "latest":
+      if (!rest[0]) throw new UsageError("Usage: bcrp latest <shortcut|CODE>");
+      return series(rest[0]);
+    case "search": {
+      const text = rest.join(" ").trim();
+      if (!text) throw new UsageError('Usage: bcrp search <text> [--freq daily|monthly|quarterly|annual] [--limit N]');
+      const freqInput = strFlag(flags, "freq");
+      const frequency = freqInput ? parseFrequency(freqInput) : undefined;
+      if (freqInput && !frequency) throw new UsageError(`--freq must be one of: ${FREQUENCIES.join(", ")}`);
+      const results = searchSeries(text, { frequency, limit: intFlag(flags, "limit") });
+      return out(results, () => formatSearch(results));
+    }
+    case "info": {
+      if (!rest[0]) throw new UsageError("Usage: bcrp info <shortcut|CODE>");
+      const info = describeSeries(rest[0]);
+      return out(info, () => formatInfo(info));
+    }
+    case "shortcuts":
+      return out(SHORTCUTS, formatShortcuts);
+    case "catalog": {
+      if (rest[0] === "update") {
+        console.error("Downloading the BCRP series catalog (~7 MB)...");
+        const entries = await downloadCatalog();
+        const file = saveUserCatalog(encodeCatalog(entries));
+        return console.log(`Updated catalog: ${entries.length} series saved to ${file}`);
+      }
+      const { entries, generatedAt, source } = loadCatalog();
+      const info = { series: entries.length, generatedAt, source };
+      return out(info, () => `${info.series} series (${source} catalog, generated ${generatedAt})`);
+    }
+    case "mcp": {
+      const { startMcpServer } = await import("./mcp");
+      return startMcpServer();
+    }
+    default:
+      if (isSeriesInput(cmd)) return series(cmd);
+      throw new UsageError(`Unknown command "${cmd}". Run \`bcrp help\`.`);
   }
-
-  if (cmd === "fx") {
-    const now = today();
-    const start = new Date(now.getTime() - 10 * 86_400_000);
-    const s = await fetchSeries(FX_CODE, ymd(start), ymd(now));
-    const last = [...s.points].reverse().find((p) => p.value !== null);
-    if (!last) throw new Error("No recent exchange rate data");
-    if (json) console.log(JSON.stringify({ code: s.code, name: s.name, ...last }, null, 2));
-    else console.log(`${last.period}  S/ ${last.value!.toFixed(s.decimals)} por US$`);
-    return;
-  }
-
-  if (cmd === "get") {
-    if (!arg) throw new Error("Usage: bcrp get <CODE> [--from ...] [--to ...]");
-    const now = today();
-    const from = typeof flags.from === "string" ? flags.from : ym(new Date(now.getFullYear() - 1, now.getMonth()));
-    const to = typeof flags.to === "string" ? flags.to : ym(now);
-    print(await fetchSeries(arg, from, to), json);
-    return;
-  }
-
-  throw new Error(`Unknown command: ${cmd}\n\n${HELP}`);
 }
 
 main().catch((e) => {
-  console.error(`error: ${e instanceof Error ? e.message : e}`);
-  process.exit(1);
+  const message = e instanceof Error ? e.message : String(e);
+  const jsonErrors = process.argv.includes("--json") || !process.stderr.isTTY;
+  console.error(jsonErrors ? JSON.stringify({ error: message }) : `error: ${message}`);
+  process.exit(e instanceof UsageError ? 2 : 1);
 });

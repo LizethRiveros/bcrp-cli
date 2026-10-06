@@ -26,6 +26,8 @@ export interface SeriesResult extends Series {
   /** Range actually requested from the API */
   from: string;
   to: string;
+  /** Who produces the data, from the catalog (BCRP, INEI, ...) */
+  source?: string;
 }
 
 export interface LatestResult {
@@ -35,13 +37,20 @@ export interface LatestResult {
   period: string;
   value: number;
   decimals: number;
+  source?: string;
+}
+
+/** `{ source }` for a code when the catalog knows who produces it, otherwise nothing. */
+function sourceOf(code: string): { source?: string } {
+  const source = findByCode(loadCatalog().entries, code)?.source;
+  return source ? { source } : {};
 }
 
 export function isSeriesInput(input: string): boolean {
   return shortcutName(input) !== undefined || CODE_RE.test(input.trim().toUpperCase());
 }
 
-function frequencyFor(code: string): Frequency {
+export function frequencyFor(code: string): Frequency {
   const f = frequencyFromCode(code) ?? findByCode(loadCatalog().entries, code)?.frequency;
   if (!f || (!CODE_RE.test(code) && !findByCode(loadCatalog().entries, code))) {
     throw new BcrpError(
@@ -77,7 +86,7 @@ export async function getSeries(q: SeriesQuery, fetchImpl?: typeof fetch): Promi
     points = points.slice(0, end);
   }
   if (q.last) points = points.slice(-q.last);
-  return { ...series, points, frequency, from, to };
+  return { ...series, points, frequency, from, to, ...sourceOf(code) };
 }
 
 export async function getLatest(input: string, fetchImpl?: typeof fetch): Promise<LatestResult> {
@@ -94,6 +103,7 @@ export async function getLatest(input: string, fetchImpl?: typeof fetch): Promis
     period: last.period,
     value: last.value!,
     decimals: series.decimals,
+    ...sourceOf(code),
   };
 }
 
@@ -127,7 +137,7 @@ export function describeSeries(input: string): SeriesInfo {
 
 export interface CompareResult {
   frequency: Frequency;
-  series: { code: string; name: string; decimals: number }[];
+  series: { code: string; name: string; decimals: number; source?: string }[];
   /** One row per period, with one value per series in the same order as `series` */
   rows: { period: string; values: (number | null)[] }[];
 }
@@ -212,7 +222,7 @@ export async function compareSeries(
 
   return {
     frequency,
-    series: results.map((r) => ({ code: r.code, name: r.name, decimals: r.decimals })),
+    series: results.map((r) => ({ code: r.code, name: r.name, decimals: r.decimals, ...sourceOf(r.code) })),
     rows,
   };
 }

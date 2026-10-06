@@ -15,6 +15,13 @@ export interface CatalogEntry {
   frequency: Frequency;
   start: string;
   end: string;
+  /** Who produces the data (BCRP, INEI, empresas bancarias, ...) */
+  source?: string;
+  description?: string;
+  /** Pointer to the methodology (usually a link) */
+  methodology?: string;
+  /** When BCRPData last updated this series (YYYY-MM-DD) */
+  updated?: string;
 }
 
 /** Compact on-disk format: repeated strings are stored once in `strings`. */
@@ -23,7 +30,8 @@ export interface EncodedCatalog {
   count: number;
   strings: string[];
   /** [code, categoryIdx, groupIdx, name, frequency letter, start, end] */
-  rows: [string, number, number, string, string, string, string][];
+  rows: [string, number, number, string, string, string, string, number?, string?, number?, number?][];
+  /** For rows with the optional tail: [..., sourceIdx, description, methodologyIdx, updatedIdx], -1 meaning "none" */
 }
 
 const LETTER: Record<Frequency, string> = { daily: "D", monthly: "M", quarterly: "Q", annual: "A" };
@@ -41,7 +49,7 @@ export function parseCatalogCsv(text: string): CatalogEntry[] {
     const c = line.split(";");
     const frequency = parseFrequency(c[10] ?? "");
     if (!c[0] || !frequency) continue;
-    entries.push({
+    const entry: CatalogEntry = {
       code: c[0].trim(),
       category: (c[1] ?? "").trim(),
       group: (c[2] ?? "").trim(),
@@ -49,7 +57,13 @@ export function parseCatalogCsv(text: string): CatalogEntry[] {
       frequency,
       start: (c[15] ?? "").trim(),
       end: (c[16] ?? "").trim(),
-    });
+    };
+    const optional = { source: c[9], description: c[4], methodology: c[5], updated: c[14] };
+    for (const [key, value] of Object.entries(optional)) {
+      const v = value?.trim();
+      if (v) entry[key as "source" | "description" | "methodology" | "updated"] = v.length > 400 ? `${v.slice(0, 399)}…` : v;
+    }
+    entries.push(entry);
   }
   return entries;
 }
@@ -78,20 +92,36 @@ export function encodeCatalog(entries: CatalogEntry[], generatedAt = new Date().
       LETTER[e.frequency],
       e.start,
       e.end,
+      e.source ? intern(e.source) : -1,
+      e.description ?? "",
+      e.methodology ? intern(e.methodology) : -1,
+      e.updated ? intern(e.updated) : -1,
     ]),
   };
 }
 
+/** Also reads catalogs saved by older versions, whose rows have only the first seven fields. */
 export function decodeCatalog(data: EncodedCatalog): CatalogEntry[] {
-  return data.rows.map(([code, cat, group, name, f, start, end]) => ({
-    code,
-    category: data.strings[cat]!,
-    group: data.strings[group]!,
-    name,
-    frequency: FROM_LETTER[f]!,
-    start,
-    end,
-  }));
+  const str = (i: number | undefined) => (i !== undefined && i >= 0 ? data.strings[i] : undefined);
+  return data.rows.map(([code, cat, group, name, f, start, end, source, description, methodology, updated]) => {
+    const entry: CatalogEntry = {
+      code,
+      category: data.strings[cat]!,
+      group: data.strings[group]!,
+      name,
+      frequency: FROM_LETTER[f]!,
+      start,
+      end,
+    };
+    const s = str(source);
+    const m = str(methodology);
+    const u = str(updated);
+    if (s) entry.source = s;
+    if (description) entry.description = description;
+    if (m) entry.methodology = m;
+    if (u) entry.updated = u;
+    return entry;
+  });
 }
 
 export function userCatalogPath(): string {

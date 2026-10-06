@@ -29,7 +29,10 @@ test("parseCatalogCsv skips header, blank and unparseable rows", () => {
     frequency: "daily",
     start: "1997-01-02",
     end: "2026-09-03",
+    source: "BCRP",
+    updated: "2026-09-03",
   });
+  expect(entries[1]!.source).toBe("BCRP");
 });
 
 test("encode/decode round-trips", () => {
@@ -95,4 +98,30 @@ test("the bundled catalog loads and finds the headline series", () => {
   expect(findByCode(entries, "pd04638pd")?.frequency).toBe("daily");
   expect(searchCatalog(entries, "tipo de cambio")[0]!.code).toBe("PD04638PD");
   expect(searchCatalog(entries, "inflación subyacente").length).toBeGreaterThan(5);
+});
+
+test("decodeCatalog still reads catalogs saved by older versions (rows without source/description)", () => {
+  const old = {
+    generatedAt: "2026-01-01T00:00:00.000Z",
+    count: 1,
+    strings: ["Inflación", "IPC group"],
+    rows: [["PN01273PM", 0, 1, "IPC", "M", "Ene-1950", "Dic-2025"]],
+  };
+  const [e] = decodeCatalog(old as never);
+  expect(e).toEqual({
+    code: "PN01273PM",
+    category: "Inflación",
+    group: "IPC group",
+    name: "IPC",
+    frequency: "monthly",
+    start: "Ene-1950",
+    end: "Dic-2025",
+  });
+  expect(e!.source).toBeUndefined();
+});
+
+test("bundled catalog carries the source of each series", () => {
+  const { entries } = loadCatalog();
+  expect(findByCode(entries, "PN01273PM")?.source).toBe("INEI");
+  expect(entries.filter((e) => e.source).length).toBeGreaterThan(14000);
 });

@@ -1,3 +1,4 @@
+import type { ChangeResult, Conversion, ThresholdCheck } from "./insights";
 import type { CompareResult, LatestResult, SeriesInfo, SeriesResult } from "./api";
 import type { CatalogEntry } from "./catalog";
 import { SHORTCUTS } from "./shortcuts";
@@ -26,6 +27,7 @@ export function formatSeries(s: SeriesResult): string {
   return [
     `${s.name}`,
     `${s.code} · ${s.frequency} · ${s.points.length} observations`,
+    ...(s.source ? [`Source: ${s.source}`] : []),
     ...(trendLine(s) ? ["", trendLine(s)] : []),
     "",
     renderTable(["PERIOD", "VALUE"], rows, [1]),
@@ -33,7 +35,8 @@ export function formatSeries(s: SeriesResult): string {
 }
 
 export function formatLatest(l: LatestResult): string {
-  return `${l.name}\n${l.code} · ${l.frequency}\n\n${l.period}  ${fmtNumber(l.value, l.decimals)}`;
+  const source = l.source ? `\nSource: ${l.source}` : "";
+  return `${l.name}\n${l.code} · ${l.frequency}${source}\n\n${l.period}  ${fmtNumber(l.value, l.decimals)}`;
 }
 
 export function formatSearch(entries: CatalogEntry[], width = process.stdout.columns || 100): string {
@@ -57,6 +60,10 @@ export function formatInfo(i: SeriesInfo): string {
     ["Group", i.group],
     ["Frequency", i.frequency],
     ["Range", i.start && i.end ? `${i.start} → ${i.end}` : undefined],
+    ["Source", i.source],
+    ["Description", i.description],
+    ["Methodology", i.methodology],
+    ["Updated", i.updated],
     ["Shortcut", i.shortcut],
     ["API", i.apiUrl],
   ];
@@ -127,7 +134,7 @@ export function trendLine(s: SeriesResult): string {
 // ---------- compare ----------
 
 export function formatCompare(c: CompareResult): string {
-  const legend = c.series.map((s) => `${s.code}  ${s.name}`).join("\n");
+  const legend = c.series.map((s) => `${s.code}  ${s.name}${s.source ? `  [${s.source}]` : ""}`).join("\n");
   const rows = c.rows.map((r) => [r.period, ...r.values.map((v, i) => fmtNumber(v, c.series[i]!.decimals))]);
   const right = c.series.map((_, i) => i + 1);
   return [legend, "", renderTable(["PERIOD", ...c.series.map((s) => s.code)], rows, right)].join("\n");
@@ -135,4 +142,55 @@ export function formatCompare(c: CompareResult): string {
 
 export function csvCompare(c: CompareResult): string {
   return toCsv(["period", ...c.series.map((s) => s.code)], c.rows.map((r) => [r.period, ...r.values]));
+}
+
+// ---------- change / convert / check ----------
+
+function signed(v: number, decimals: number): string {
+  return `${v > 0 ? "+" : ""}${fmtNumber(v, decimals)}`;
+}
+
+export function formatChange(c: ChangeResult): string {
+  const pct = c.changePct === null ? "" : `  (${c.changePct > 0 ? "+" : ""}${c.changePct.toFixed(2)}%)`;
+  const lines = [
+    c.name,
+    `${c.code} · ${c.frequency}`,
+    ...(c.source ? [`Source: ${c.source}`] : []),
+    "",
+    `Over ${c.over}:  ${fmtNumber(c.base.value, c.decimals)} (${c.base.period})  →  ${fmtNumber(c.latest.value, c.decimals)} (${c.latest.period})`,
+    `Change:    ${signed(c.change, c.decimals)}${pct}`,
+  ];
+  if (c.changePct === null && c.base.value !== 0) lines.push("(a rate or percentage: change shown in points, not %)");
+  return lines.join("\n");
+}
+
+export function csvChange(c: ChangeResult): string {
+  return toCsv(
+    ["code", "over", "base_period", "base_value", "latest_period", "latest_value", "change", "change_pct"],
+    [[c.code, c.over, c.base.period, c.base.value, c.latest.period, c.latest.value, c.change, c.changePct]],
+  );
+}
+
+export function formatConversion(c: Conversion): string {
+  const money = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return [
+    `${money(c.amount)} ${c.from.toUpperCase()} = ${money(c.result)} ${c.to.toUpperCase()}`,
+    `Rate: ${fmtNumber(c.rate, 3)} S/ per US$ · interbank ${c.side === "sell" ? "sell" : "buy"} · ${c.ratePeriod}`,
+    `${c.series}${c.source ? ` · Source: ${c.source}` : ""}`,
+    "Reference rate; banks and exchange houses quote their own.",
+  ].join("\n");
+}
+
+export function csvConversion(c: Conversion): string {
+  return toCsv(
+    ["amount", "from", "to", "result", "rate", "rate_period", "side"],
+    [[c.amount, c.from, c.to, c.result, c.rate, c.ratePeriod, c.side]],
+  );
+}
+
+export function formatCheck(c: ThresholdCheck): string {
+  const v = fmtNumber(c.value, 3);
+  return c.triggered
+    ? `ALERT: ${c.code} is ${v} (${c.period}), ${c.op} ${c.threshold}\n${c.name}`
+    : `OK: ${c.code} is ${v} (${c.period}), not ${c.op} ${c.threshold}\n${c.name}`;
 }

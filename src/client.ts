@@ -1,3 +1,5 @@
+import { cacheEnabled, cachedFetch } from "./cache";
+
 const BASE = "https://estadisticas.bcrp.gob.pe/estadisticas/series/api";
 
 export interface Point {
@@ -93,6 +95,10 @@ export interface FetchOptions {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+/** Real network access, through the local cache unless it is disabled (BCRP_NO_CACHE=1 / --no-cache). */
+const defaultFetch = ((input: Parameters<typeof fetch>[0], init?: Parameters<typeof fetch>[1]) =>
+  (cacheEnabled() ? cachedFetch() : fetch)(input, init)) as typeof fetch;
+
 /** Series as the API returns them in one response: in the API's own order, identified only by name. */
 export interface SeriesSet {
   title: string;
@@ -107,7 +113,7 @@ export async function fetchSeriesSet(
   codes: string[],
   from: string,
   to: string,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: typeof fetch = defaultFetch,
   { retries = 2, delayMs = 700 }: FetchOptions = {},
 ): Promise<SeriesSet> {
   const label = codes.join("-");
@@ -144,7 +150,7 @@ export async function fetchSeries(
   code: string,
   from: string,
   to: string,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: typeof fetch = defaultFetch,
   options?: FetchOptions,
 ): Promise<Series> {
   const set = await fetchSeriesSet([code], from, to, fetchImpl, options);

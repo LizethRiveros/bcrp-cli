@@ -3,7 +3,9 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { z } from "zod";
 import pkg from "../package.json";
 import { compareSeries, describeSeries, getLatest, getSeries, searchSeries } from "./api";
+import { OVERS } from "./calc";
 import { FREQUENCIES } from "./dates";
+import { type FxSide, convertCurrency, getChange } from "./insights";
 import { SHORTCUTS } from "./shortcuts";
 
 const shortcutList = Object.entries(SHORTCUTS)
@@ -86,6 +88,36 @@ export function createServer(): McpServer {
       },
     },
     ({ series, from, to, last }) => run(() => compareSeries(series, { from, to, last })),
+  );
+
+  server.registerTool(
+    "bcrp_change",
+    {
+      description:
+        "How much a BCRP series moved between its latest observation and an earlier point (1 week, 1/3/6 months, 1 year or since the start of the year). " +
+        "Returns the absolute change and, for non-percentage series, the % change.",
+      inputSchema: {
+        series: seriesParam,
+        over: z.enum(OVERS).optional().describe("Period to measure over (default: 1m for daily/monthly series, 1y for quarterly/annual)"),
+      },
+    },
+    ({ series, over }) => run(() => getChange(series, over)),
+  );
+
+  server.registerTool(
+    "bcrp_convert",
+    {
+      description:
+        "Convert an amount between US dollars and Peruvian soles using the BCRP interbank exchange rate " +
+        "(latest published, or on a given date). A reference rate: banks and exchange houses quote their own.",
+      inputSchema: {
+        amount: z.number().describe("Amount to convert"),
+        from: z.enum(["usd", "pen"]).describe("Currency of the amount; it is converted into the other one"),
+        date: z.string().optional().describe("Use the rate of this date (YYYY-MM-DD); default: latest"),
+        side: z.enum(["buy", "sell"]).optional().describe("Interbank buy or sell rate (default: sell)"),
+      },
+    },
+    ({ amount, from, date, side }) => run(() => convertCurrency({ amount, from, date, side: side as FxSide | undefined })),
   );
 
   server.registerTool(

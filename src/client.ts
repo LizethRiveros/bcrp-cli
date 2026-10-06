@@ -93,14 +93,25 @@ export interface FetchOptions {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function fetchSeries(
-  code: string,
+/** Series as the API returns them in one response: in the API's own order, identified only by name. */
+export interface SeriesSet {
+  title: string;
+  series: { name: string; decimals: number; points: Point[] }[];
+}
+
+/**
+ * Fetches one or more series (they must share a frequency) in a single request.
+ * The API does NOT keep the order you ask for, so callers must match series by `name`.
+ */
+export async function fetchSeriesSet(
+  codes: string[],
   from: string,
   to: string,
   fetchImpl: typeof fetch = fetch,
   { retries = 2, delayMs = 700 }: FetchOptions = {},
-): Promise<Series> {
-  const url = `${BASE}/${encodeURIComponent(code)}/json/${from}/${to}/ing`;
+): Promise<SeriesSet> {
+  const label = codes.join("-");
+  const url = `${BASE}/${codes.map(encodeURIComponent).join("-")}/json/${from}/${to}/ing`;
   for (let attempt = 0; ; attempt++) {
     let res: Response;
     try {
@@ -109,36 +120,45 @@ export async function fetchSeries(
         signal: AbortSignal.timeout(30_000),
       });
     } catch (e) {
-      throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, code);
+      throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, label);
     }
-    if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${code}`, code);
+    if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${label}`, label);
 
     const json = extractJson(await res.text());
-    if (json) return toSeries(code, JSON.parse(json) as RawResponse);
+    if (json) return toSeriesSet(JSON.parse(json) as RawResponse);
 
-    // No JSON: the API answers with an anti-bot page both when it throttles bursts and when the code does not exist.
+    // No JSON: the API answers with an anti-bot page both when it throttles bursts and when a code does not exist.
     if (attempt >= retries) {
       throw new BcrpError(
-        `No data from the BCRP API for "${code}" after ${attempt + 1} attempts. The code may not exist, ` +
+        `No data from the BCRP API for "${label}" after ${attempt + 1} attempts. A code may not exist, ` +
           "or the BCRP's anti-bot protection is throttling requests: wait a few seconds and retry, " +
-          `or check the code with \`bcrp info ${code}\`.`,
-        code,
+          `or check the code with \`bcrp info <code>\`.`,
+        label,
       );
     }
     await sleep(delayMs * (attempt + 1));
   }
 }
 
-function toSeries(code: string, raw: RawResponse): Series {
-  const s = raw.config.series[0];
+export async function fetchSeries(
+  code: string,
+  from: string,
+  to: string,
+  fetchImpl: typeof fetch = fetch,
+  options?: FetchOptions,
+): Promise<Series> {
+  const set = await fetchSeriesSet([code], from, to, fetchImpl, options);
+  const s = set.series[0];
+  return { code, title: set.title, name: s?.name ?? code, decimals: s?.decimals ?? 2, points: s?.points ?? [] };
+}
+
+function toSeriesSet(raw: RawResponse): SeriesSet {
   return {
-    code,
     title: raw.config.title,
-    name: s?.name ?? code,
-    decimals: Number(s?.dec ?? 2),
-    points: raw.periods.map((p) => ({
-      period: normalizePeriod(p.name),
-      value: parseValue(p.values[0]),
+    series: raw.config.series.map((s, i) => ({
+      name: s.name,
+      decimals: Number(s.dec ?? 2),
+      points: (raw.periods ?? []).map((p) => ({ period: normalizePeriod(p.name), value: parseValue(p.values[i]) })),
     })),
   };
 }

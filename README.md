@@ -189,7 +189,8 @@ bun run build       # bundles to dist/cli.js (runs on Node)
   `bcrp <series>` always returns the latest *published* observation.
 - Series metadata in the catalog (date ranges) can be older than the live data.
 - The BCRP API sits behind an anti-bot filter that rejects bursts of requests. `bcrp` retries with a short
-  back-off and fetches series one at a time; if you script many calls, add a small delay between them.
+  back-off, and `compare` fetches all its series in a single request; if you script many calls, add a small
+  delay between them.
 
 ## License
 

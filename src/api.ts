@@ -1,4 +1,4 @@
-import { BcrpError, fetchSeries, type Series } from "./client";
+import { BcrpError, fetchSeries, fetchSeriesSet, type Series } from "./client";
 import { type CatalogEntry, findByCode, loadCatalog, searchCatalog } from "./catalog";
 import { type Frequency, dateFromInput, frequencyFromCode, rangeBack, toApiDate } from "./dates";
 import { SHORTCUTS, resolveCode, shortcutName } from "./shortcuts";
@@ -53,14 +53,21 @@ function frequencyFor(code: string): Frequency {
   return f;
 }
 
-export async function getSeries(q: SeriesQuery, fetchImpl?: typeof fetch): Promise<SeriesResult> {
-  const code = resolveCode(q.series);
-  const frequency = frequencyFor(code);
+/** The API date range to request for a query: explicit bounds if given, otherwise a window ending today. */
+function windowFor(frequency: Frequency, q: Omit<SeriesQuery, "series">): { from: string; to: string } {
   const end = q.to ? dateFromInput(q.to, "to") : new Date();
   const count = q.last ? q.last + LAG_SLACK[frequency] : DEFAULT_COUNT[frequency];
   const window = rangeBack(frequency, count, end);
-  const from = q.from ? toApiDate(q.from, frequency, "from") : window.from;
-  const to = q.to ? toApiDate(q.to, frequency, "to") : window.to;
+  return {
+    from: q.from ? toApiDate(q.from, frequency, "from") : window.from,
+    to: q.to ? toApiDate(q.to, frequency, "to") : window.to,
+  };
+}
+
+export async function getSeries(q: SeriesQuery, fetchImpl?: typeof fetch): Promise<SeriesResult> {
+  const code = resolveCode(q.series);
+  const frequency = frequencyFor(code);
+  const { from, to } = windowFor(frequency, q);
   const series = await fetchSeries(code, from, to, fetchImpl);
   let points = series.points;
   if (!q.to) {
@@ -127,27 +134,64 @@ export interface CompareResult {
 
 const MAX_COMPARE = 6;
 
+/** The series name the API reports for a catalog entry: "<group> - <name>". */
+function apiName(e: CatalogEntry): string {
+  return `${e.group} - ${e.name}`;
+}
+
+/**
+ * Fetches several same-frequency series in ONE request and returns them in the order of `codes`.
+ *
+ * The API returns series in its own order and identifies them only by name, so each one is matched back to its code
+ * through the catalog. If that match is not certain (unknown code, repeated names, unexpected response), it falls
+ * back to one request per series rather than risk assigning values to the wrong series.
+ */
+async function fetchMany(codes: string[], from: string, to: string, fetchImpl?: typeof fetch): Promise<Series[]> {
+  const catalog = loadCatalog().entries;
+  const names = codes.map((c) => {
+    const e = findByCode(catalog, c);
+    return e ? apiName(e) : undefined;
+  });
+
+  if (names.every((n): n is string => n !== undefined) && new Set(names).size === codes.length) {
+    const set = await fetchSeriesSet(codes, from, to, fetchImpl);
+    const order = names.map((n) => set.series.findIndex((s) => s.name === n));
+    if (set.series.length === codes.length && order.every((i) => i >= 0) && new Set(order).size === codes.length) {
+      return codes.map((code, i) => {
+        const s = set.series[order[i]!]!;
+        return { code, title: set.title, name: s.name, decimals: s.decimals, points: s.points };
+      });
+    }
+  }
+
+  // Not certain which series is which: ask for them one at a time (sequentially, to avoid the anti-bot filter).
+  const out: Series[] = [];
+  for (const code of codes) out.push(await fetchSeries(code, from, to, fetchImpl));
+  return out;
+}
+
 /** Fetches several series of the same frequency and aligns them by period. */
 export async function compareSeries(
   inputs: string[],
   q: Omit<SeriesQuery, "series"> = {},
   fetchImpl?: typeof fetch,
 ): Promise<CompareResult> {
-  const unique = [...new Set(inputs.map((i) => resolveCode(i)))];
-  if (unique.length < 2) throw new BcrpError("compare needs at least two different series");
-  if (unique.length > MAX_COMPARE) throw new BcrpError(`compare supports up to ${MAX_COMPARE} series`);
+  const codes = [...new Set(inputs.map((i) => resolveCode(i)))];
+  if (codes.length < 2) throw new BcrpError("compare needs at least two different series");
+  if (codes.length > MAX_COMPARE) throw new BcrpError(`compare supports up to ${MAX_COMPARE} series`);
 
-  // One at a time: bursts of parallel requests trigger the BCRP's anti-bot protection.
-  const results: SeriesResult[] = [];
-  for (const series of unique) results.push(await getSeries({ series, ...q }, fetchImpl));
-  const frequency = results[0]!.frequency;
-  const mismatch = results.find((r) => r.frequency !== frequency);
-  if (mismatch) {
+  const frequencies = codes.map((c) => frequencyFor(c));
+  const frequency = frequencies[0]!;
+  const other = frequencies.findIndex((f) => f !== frequency);
+  if (other >= 0) {
     throw new BcrpError(
-      `Cannot compare series of different frequencies: ${results[0]!.code} is ${frequency} but ${mismatch.code} is ${mismatch.frequency}. ` +
+      `Cannot compare series of different frequencies: ${codes[0]} is ${frequency} but ${codes[other]} is ${frequencies[other]}. ` +
         "Pick series with the same frequency (see `bcrp search --freq`).",
     );
   }
+
+  const { from, to } = windowFor(frequency, q);
+  const results = await fetchMany(codes, from, to, fetchImpl);
 
   const byPeriod = new Map<string, (number | null)[]>();
   results.forEach((r, i) => {
@@ -158,6 +202,12 @@ export async function compareSeries(
     }
   });
   let rows = [...byPeriod].sort(([a], [b]) => a.localeCompare(b)).map(([period, values]) => ({ period, values }));
+  if (!q.to) {
+    // Drop the unpublished tail: trailing periods where no series has a value yet.
+    let end = rows.length;
+    while (end > 0 && rows[end - 1]!.values.every((v) => v === null)) end--;
+    rows = rows.slice(0, end);
+  }
   if (q.last) rows = rows.slice(-q.last);
 
   return {

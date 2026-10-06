@@ -1,0 +1,48 @@
+name: Demo page
+
+# Publishes docs/ to GitHub Pages. On a schedule (and manually) it first regenerates the page with fresh data from
+# the BCRP; if that fails (for example the BCRP blocks the request) it deploys the committed snapshot instead.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "scripts/build-demo.ts"
+      - "scripts/demo.template.html"
+      - ".github/workflows/pages.yml"
+  schedule:
+    - cron: "0 23 * * 1-5" # weekdays, 6 pm in Lima
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Refresh the data
+        id: refresh
+        continue-on-error: true
+        run: bun run demo
+      - name: Warn when the snapshot is stale
+        if: steps.refresh.outcome == 'failure'
+        run: echo "::warning::Could not refresh the data from the BCRP; deploying the committed snapshot."
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deployment
+        uses: actions/deploy-pages@v4

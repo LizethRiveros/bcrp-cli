@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bcrp: datos del Banco Central del Perú</title>
+<meta name="description" content="CLI y servidor MCP para los datos oficiales del BCRP: dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series. Gratis y de código abierto.">
+<meta property="og:title" content="bcrp: datos del Banco Central del Perú">
+<meta property="og:description" content="Dólar, inflación, tasa de referencia y 17.000 series oficiales del BCRP, en tu terminal y en tu IA.">
+<style>
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --text: #1b1b18;
+  --muted: #5c5b55;
+  --border: #e4e1d8;
+  --accent: #c8102e;
+  --code-bg: #14140f;
+  --code-ink: #e8e6dc;
+  --code-muted: #8f8d80;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12120f;
+    --surface: #1b1b17;
+    --text: #f1efe6;
+    --muted: #a8a69a;
+    --border: #2f2e28;
+    --accent: #ff6b7d;
+    --code-bg: #0a0a08;
+    --code-ink: #e8e6dc;
+    --code-muted: #8f8d80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12120f;
+  --surface: #1b1b17;
+  --text: #f1efe6;
+  --muted: #a8a69a;
+  --border: #2f2e28;
+  --accent: #ff6b7d;
+  --code-bg: #0a0a08;
+  --code-ink: #e8e6dc;
+  --code-muted: #8f8d80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+header.hero { padding: 56px 0 40px; }
+.brand { font: 600 15px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); letter-spacing: .02em; }
+h1 { font-size: clamp(30px, 6vw, 48px); line-height: 1.1; margin: 14px 0 14px; letter-spacing: -.02em; max-width: 18ch; }
+.lead { font-size: 18px; color: var(--muted); max-width: 58ch; margin: 0 0 24px; }
+.install {
+  display: flex; align-items: center; gap: 8px; max-width: 560px;
+  background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 6px 6px 6px 16px;
+}
+.install code { flex: 1; font: 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto; white-space: nowrap; padding: 8px 0; }
+.install code::before { content: "$ "; color: var(--code-muted); }
+button.copy {
+  font: 600 13px/1 system-ui, sans-serif; color: var(--code-ink); background: transparent;
+  border: 1px solid #4a493f; border-radius: 7px; padding: 9px 12px; cursor: pointer; min-width: 74px;
+}
+button.copy:hover { background: #26251f; }
+.links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 15px; }
+section { padding: 32px 0; }
+h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.card h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.card .what { margin: 0; font-size: 12.5px; color: var(--muted); }
+.value { font: 600 32px/1.1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: -.02em; margin-top: 8px; }
+.when { font-size: 12.5px; color: var(--muted); }
+.delta { font-size: 13px; margin-top: 2px; }
+svg.spark { width: 100%; height: 36px; margin-top: 8px; display: block; }
+svg.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.src { margin-top: auto; padding-top: 8px; font-size: 11.5px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.feature h3 { margin: 0 0 4px; font-size: 16px; }
+.feature p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
+pre {
+  margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 12px 14px;
+  font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto;
+}
+pre .c { color: var(--code-muted); }
+footer { border-top: 1px solid var(--border); margin-top: 24px; padding: 24px 0 48px; color: var(--muted); font-size: 13.5px; }
+footer p { margin: 0 0 6px; max-width: 70ch; }
+@media (max-width: 520px) { header.hero { padding-top: 40px; } .value { font-size: 28px; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="brand">bcrp</div>
+    <h1>Los datos del Banco Central del Perú, en tu terminal y en tu IA.</h1>
+    <p class="lead">Dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series oficiales del BCRP. Busca por nombre, compara, mide variaciones y conviértelo todo con un comando. Gratis y de código abierto.</p>
+    <div class="install">
+      <code id="cmd">npx @lizethriveros/bcrp-cli fx</code>
+      <button class="copy" type="button" id="copy" aria-label="Copiar el comando">Copiar</button>
+    </div>
+    <div class="links">
+      <a href="https://github.com/LizethRiveros/bcrp-cli">GitHub</a>
+      <a href="https://www.npmjs.com/package/@lizethriveros/bcrp-cli">npm</a>
+      <a href="#ia">Conéctalo a tu IA</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="hoy">
+    <h2 id="hoy">El Perú hoy</h2>
+    <p class="sub">Último dato publicado de cada indicador. Instantánea del 6 oct 2026.</p>
+    <div class="cards">
+      <article class="card">
+        <h3>Dólar</h3>
+        <p class="what">Tipo de cambio interbancario venta (S/ por US$)</p>
+        <div class="value">S/ 3.427</div>
+        <div class="when">5 oct 2026</div>
+        <div class="delta">▲ +1.83% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,28.00 3.45,27.83 6.90,27.86 10.34,25.62 13.79,23.63 17.24,22.94 20.69,24.87 24.14,24.23 27.59,23.04 31.03,24.24 34.48,25.38 37.93,24.77 41.38,21.58 44.83,22.53 48.28,19.37 51.72,20.52 55.17,22.73 58.62,23.45 62.07,24.69 65.52,25.48 68.97,24.18 72.41,17.72 75.86,13.49 79.31,10.07 82.76,5.53 86.21,4.07 89.66,7.20 93.10,2.00 96.55,5.74 100.00,8.36"/></svg>
+        <div class="src">Fuente: SBS, Reuters, Datatec, BCRP · <code>PD04638PD</code></div>
+      </article>
+      <article class="card">
+        <h3>Inflación</h3>
+        <p class="what">Variación en 12 meses, Lima Metropolitana</p>
+        <div class="value">4.44%</div>
+        <div class="when">ago 2026</div>
+        <div class="delta">▲ +0.37 pts en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,12.87 3.45,17.73 6.90,20.99 10.34,18.80 13.79,20.03 17.24,20.76 20.69,22.78 24.14,20.95 27.59,18.90 31.03,21.29 34.48,22.18 37.93,25.10 41.38,26.67 44.83,23.74 48.28,23.47 51.72,23.42 55.17,23.45 58.62,28.00 62.07,26.03 65.52,26.08 68.97,25.95 72.41,24.86 75.86,23.36 79.31,19.35 82.76,6.94 86.21,5.31 89.66,6.16 93.10,5.35 96.55,4.91 100.00,2.00"/></svg>
+        <div class="src">Fuente: INEI · <code>PN01273PM</code></div>
+      </article>
+      <article class="card">
+        <h3>Tasa de referencia</h3>
+        <p class="what">Política monetaria del BCRP</p>
+        <div class="value">4.25%</div>
+        <div class="when">6 oct 2026</div>
+        <div class="delta">— 0.00 pts en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,15.00 3.45,15.00 6.90,15.00 10.34,15.00 13.79,15.00 17.24,15.00 20.69,15.00 24.14,15.00 27.59,15.00 31.03,15.00 34.48,15.00 37.93,15.00 41.38,15.00 44.83,15.00 48.28,15.00 51.72,15.00 55.17,15.00 58.62,15.00 62.07,15.00 65.52,15.00 68.97,15.00 72.41,15.00 75.86,15.00 79.31,15.00 82.76,15.00 86.21,15.00 89.66,15.00 93.10,15.00 96.55,15.00 100.00,15.00"/></svg>
+        <div class="src">Fuente: BCRP, Ministerio de Economía y Finanzas · <code>PD12301MD</code></div>
+      </article>
+      <article class="card">
+        <h3>Reservas internacionales</h3>
+        <p class="what">Netas, millones de US$</p>
+        <div class="value">US$ 95,746</div>
+        <div class="when">5 oct 2026</div>
+        <div class="delta">▼ -2.54% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.00 3.45,2.27 6.90,6.43 10.34,12.39 13.79,12.60 17.24,3.91 20.69,4.96 24.14,4.69 27.59,6.49 31.03,6.53 34.48,7.15 37.93,5.96 41.38,7.59 44.83,6.90 48.28,8.05 51.72,8.46 55.17,10.05 58.62,8.74 62.07,9.98 65.52,10.71 68.97,11.08 72.41,10.81 75.86,12.09 79.31,12.38 82.76,17.49 86.21,26.03 89.66,28.00 93.10,15.64 96.55,14.84 100.00,15.34"/></svg>
+        <div class="src">Fuente: BCRP · <code>PD04650MD</code></div>
+      </article>
+      <article class="card">
+        <h3>PBI</h3>
+        <p class="what">Variación interanual</p>
+        <div class="value">3.6%</div>
+        <div class="when">jul 2026</div>
+        <div class="delta">▲ +1.8 pts en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,12.82 3.45,28.00 6.90,2.75 10.34,2.00 13.79,24.68 17.24,5.61 20.69,9.38 24.14,11.42 27.59,9.97 31.03,7.63 34.48,4.72 37.93,7.54 41.38,14.22 44.83,5.96 48.28,20.73 51.72,17.66 55.17,5.26 58.62,11.17 62.07,12.80 65.52,7.59 68.97,8.51 72.41,19.50 75.86,8.66 79.31,10.29 82.76,10.61 86.21,12.37 89.66,10.07 93.10,17.01 96.55,18.81 100.00,11.13"/></svg>
+        <div class="src">Fuente: INEI, Ministerio de Agricultura, Ministerio de Energía y Minas, Ministerio de la Producción · <code>PN01728AM</code></div>
+      </article>
+      <article class="card">
+        <h3>Cobre</h3>
+        <p class="what">Londres, ¢US$ por libra</p>
+        <div class="value">651.13</div>
+        <div class="when">2 oct 2026</div>
+        <div class="delta">— 0.00% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,17.64 3.45,14.84 6.90,11.39 10.34,12.60 13.79,11.05 17.24,11.05 20.69,15.86 24.14,17.26 27.59,17.12 31.03,16.71 34.48,10.87 37.93,4.07 41.38,6.32 44.83,16.05 48.28,21.28 51.72,28.00 55.17,27.97 58.62,21.68 62.07,15.69 65.52,11.25 68.97,2.31 72.41,2.00 75.86,4.14 79.31,3.10 82.76,3.97 86.21,10.72 89.66,13.14 93.10,12.70 96.55,17.95 100.00,17.26"/></svg>
+        <div class="src">Fuente: Reuters · <code>PD04701XD</code></div>
+      </article>
+      <article class="card">
+        <h3>Oro</h3>
+        <p class="what">Londres, US$ por onza troy</p>
+        <div class="value">US$ 4,141.19</div>
+        <div class="when">2 oct 2026</div>
+        <div class="delta">▼ -5.49% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.24 3.45,2.00 6.90,5.17 10.34,4.79 13.79,11.70 17.24,12.55 20.69,17.77 24.14,15.23 27.59,10.85 31.03,12.91 34.48,14.14 37.93,16.46 41.38,14.41 44.83,18.28 48.28,16.79 51.72,19.17 55.17,19.53 58.62,20.90 62.07,17.15 65.52,15.38 68.97,17.07 72.41,16.24 75.86,19.74 79.31,20.35 82.76,19.88 86.21,28.00 89.66,24.80 93.10,26.00 96.55,25.03 100.00,26.78"/></svg>
+        <div class="src">Fuente: Reuters · <code>PD04704XD</code></div>
+      </article>
+    </div>
+    <p class="note">Los datos mensuales se publican con semanas de rezago: cada tarjeta indica su periodo. Las variaciones se calculan con <code>bcrp change</code>.</p>
+  </section>
+
+  <section aria-labelledby="hacer">
+    <h2 id="hacer">Qué puedes hacer</h2>
+    <p class="sub">Todo funciona igual en la terminal, en scripts (JSON y CSV) y desde una IA.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Encontrar cualquier serie</h3>
+        <p>El BCRP usa códigos como <code>PD04638PD</code>. Aquí buscas por nombre, en español o inglés.</p>
+<pre>$ bcrp search "tasa de referencia"
+PD04722MM  monthly  Tasa de Referencia…
+PD12301MD  daily    Tasa de Referencia…</pre>
+      </div>
+      <div class="feature">
+        <h3>Medir y comparar</h3>
+        <p>Cuánto se movió algo, o varias series lado a lado.</p>
+<pre>$ bcrp change fx --over ytd
+Over ytd: 3.364 → 3.427
+Change:   +0.064 (+1.89%)
+
+$ bcrp compare inflation gdp --last 4</pre>
+      </div>
+      <div class="feature">
+        <h3>Convertir y avisar</h3>
+        <p>Dólares a soles con el tipo de cambio oficial, y alertas para tus scripts.</p>
+<pre>$ bcrp convert 100 usd
+100.00 USD = 342.71 PEN
+
+$ bcrp check fx --above 3.50 &amp;&amp; notify</pre>
+      </div>
+      <div class="feature">
+        <h3>Exportar</h3>
+        <p>JSON automático al encadenar comandos, y CSV para abrir en Excel.</p>
+<pre>$ bcrp get fx --from 2026-01 --csv &gt; fx.csv
+$ bcrp fx | jq .value</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="ia" aria-labelledby="ia-h">
+    <h2 id="ia-h">Conéctalo a tu IA</h2>
+    <p class="sub">Las IA no conocen el dólar de hoy. Con el servidor MCP, tu asistente consulta la cifra oficial y te responde con su fuente.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Claude Code</h3>
+        <p>Una línea:</p>
+<pre>claude mcp add bcrp -- npx -y @lizethriveros/bcrp-cli mcp</pre>
+      </div>
+      <div class="feature">
+        <h3>Otros clientes MCP</h3>
+        <p>Siete herramientas: buscar, último valor, historial, comparar, variación, conversión e info.</p>
+<pre>{
+  "mcpServers": {
+    "bcrp": {
+      "command": "npx",
+      "args": ["-y", "@lizethriveros/bcrp-cli", "mcp"]
+    }
+  }
+}</pre>
+      </div>
+      <div class="feature">
+        <h3>Skill para agentes</h3>
+        <p>Enseña a tu asistente cuándo usarlo y qué errores evitar (rezago, frecuencias, tasas).</p>
+<pre>mkdir -p ~/.claude/skills/bcrp
+bcrp skill &gt; ~/.claude/skills/bcrp/SKILL.md</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a> y cada serie indica su fuente.</p>
+    <p>El tipo de cambio es una referencia interbancaria: bancos y casas de cambio publican el suyo. Código abierto bajo licencia MIT.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var btn = document.getElementById("copy");
+  var cmd = document.getElementById("cmd");
+  if (!btn || !cmd) return;
+  btn.addEventListener("click", function () {
+    var text = cmd.textContent;
+    var done = function () {
+      btn.textContent = "Copiado";
+      setTimeout(function () { btn.textContent = "Copiar"; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    }
+  });
+})();
+</script>
+</body>
+</html>

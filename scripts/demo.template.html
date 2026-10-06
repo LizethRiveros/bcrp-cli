@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>bcrp: datos del Banco Central del Perú</title>
+<meta name="description" content="CLI y servidor MCP para los datos oficiales del BCRP: dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series. Gratis y de código abierto.">
+<meta property="og:title" content="bcrp: datos del Banco Central del Perú">
+<meta property="og:description" content="Dólar, inflación, tasa de referencia y 17.000 series oficiales del BCRP, en tu terminal y en tu IA.">
+<style>
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --text: #1b1b18;
+  --muted: #5c5b55;
+  --border: #e4e1d8;
+  --accent: #c8102e;
+  --code-bg: #14140f;
+  --code-ink: #e8e6dc;
+  --code-muted: #8f8d80;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12120f;
+    --surface: #1b1b17;
+    --text: #f1efe6;
+    --muted: #a8a69a;
+    --border: #2f2e28;
+    --accent: #ff6b7d;
+    --code-bg: #0a0a08;
+    --code-ink: #e8e6dc;
+    --code-muted: #8f8d80;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12120f;
+  --surface: #1b1b17;
+  --text: #f1efe6;
+  --muted: #a8a69a;
+  --border: #2f2e28;
+  --accent: #ff6b7d;
+  --code-bg: #0a0a08;
+  --code-ink: #e8e6dc;
+  --code-muted: #8f8d80;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
+header.hero { padding: 56px 0 40px; }
+.brand { font: 600 15px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); letter-spacing: .02em; }
+h1 { font-size: clamp(30px, 6vw, 48px); line-height: 1.1; margin: 14px 0 14px; letter-spacing: -.02em; max-width: 18ch; }
+.lead { font-size: 18px; color: var(--muted); max-width: 58ch; margin: 0 0 24px; }
+.install {
+  display: flex; align-items: center; gap: 8px; max-width: 560px;
+  background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 6px 6px 6px 16px;
+}
+.install code { flex: 1; font: 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto; white-space: nowrap; padding: 8px 0; }
+.install code::before { content: "$ "; color: var(--code-muted); }
+button.copy {
+  font: 600 13px/1 system-ui, sans-serif; color: var(--code-ink); background: transparent;
+  border: 1px solid #4a493f; border-radius: 7px; padding: 9px 12px; cursor: pointer; min-width: 74px;
+}
+button.copy:hover { background: #26251f; }
+.links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 15px; }
+section { padding: 32px 0; }
+h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.card h3 { margin: 0; font-size: 14px; font-weight: 600; }
+.card .what { margin: 0; font-size: 12.5px; color: var(--muted); }
+.value { font: 600 32px/1.1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: -.02em; margin-top: 8px; }
+.when { font-size: 12.5px; color: var(--muted); }
+.delta { font-size: 13px; margin-top: 2px; }
+svg.spark { width: 100%; height: 36px; margin-top: 8px; display: block; }
+svg.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.src { margin-top: auto; padding-top: 8px; font-size: 11.5px; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); margin-top: 14px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.feature h3 { margin: 0 0 4px; font-size: 16px; }
+.feature p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
+pre {
+  margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 12px 14px;
+  font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto;
+}
+pre .c { color: var(--code-muted); }
+footer { border-top: 1px solid var(--border); margin-top: 24px; padding: 24px 0 48px; color: var(--muted); font-size: 13.5px; }
+footer p { margin: 0 0 6px; max-width: 70ch; }
+@media (max-width: 520px) { header.hero { padding-top: 40px; } .value { font-size: 28px; } }
+</style>
+</head>
+<body>
+<header class="hero">
+  <div class="wrap">
+    <div class="brand">bcrp</div>
+    <h1>Los datos del Banco Central del Perú, en tu terminal y en tu IA.</h1>
+    <p class="lead">Dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series oficiales del BCRP. Busca por nombre, compara, mide variaciones y conviértelo todo con un comando. Gratis y de código abierto.</p>
+    <div class="install">
+      <code id="cmd">npx @lizethriveros/bcrp-cli fx</code>
+      <button class="copy" type="button" id="copy" aria-label="Copiar el comando">Copiar</button>
+    </div>
+    <div class="links">
+      <a href="https://github.com/LizethRiveros/bcrp-cli">GitHub</a>
+      <a href="https://www.npmjs.com/package/@lizethriveros/bcrp-cli">npm</a>
+      <a href="#ia">Conéctalo a tu IA</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section aria-labelledby="hoy">
+    <h2 id="hoy">El Perú hoy</h2>
+    <p class="sub">Último dato publicado de cada indicador. Instantánea del {{UPDATED}}.</p>
+    <div class="cards">
+{{CARDS}}
+    </div>
+    <p class="note">Los datos mensuales se publican con semanas de rezago: cada tarjeta indica su periodo. Las variaciones se calculan con <code>bcrp change</code>.</p>
+  </section>
+
+  <section aria-labelledby="hacer">
+    <h2 id="hacer">Qué puedes hacer</h2>
+    <p class="sub">Todo funciona igual en la terminal, en scripts (JSON y CSV) y desde una IA.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Encontrar cualquier serie</h3>
+        <p>El BCRP usa códigos como <code>PD04638PD</code>. Aquí buscas por nombre, en español o inglés.</p>
+<pre>$ bcrp search "tasa de referencia"
+PD04722MM  monthly  Tasa de Referencia…
+PD12301MD  daily    Tasa de Referencia…</pre>
+      </div>
+      <div class="feature">
+        <h3>Medir y comparar</h3>
+        <p>Cuánto se movió algo, o varias series lado a lado.</p>
+<pre>$ bcrp change fx --over ytd
+Over ytd: 3.364 → 3.427
+Change:   +0.064 (+1.89%)
+
+$ bcrp compare inflation gdp --last 4</pre>
+      </div>
+      <div class="feature">
+        <h3>Convertir y avisar</h3>
+        <p>Dólares a soles con el tipo de cambio oficial, y alertas para tus scripts.</p>
+<pre>$ bcrp convert 100 usd
+100.00 USD = {{CONVERT}} PEN
+
+$ bcrp check fx --above 3.50 &amp;&amp; notify</pre>
+      </div>
+      <div class="feature">
+        <h3>Exportar</h3>
+        <p>JSON automático al encadenar comandos, y CSV para abrir en Excel.</p>
+<pre>$ bcrp get fx --from 2026-01 --csv &gt; fx.csv
+$ bcrp fx | jq .value</pre>
+      </div>
+    </div>
+  </section>
+
+  <section id="ia" aria-labelledby="ia-h">
+    <h2 id="ia-h">Conéctalo a tu IA</h2>
+    <p class="sub">Las IA no conocen el dólar de hoy. Con el servidor MCP, tu asistente consulta la cifra oficial y te responde con su fuente.</p>
+    <div class="features">
+      <div class="feature">
+        <h3>Claude Code</h3>
+        <p>Una línea:</p>
+<pre>claude mcp add bcrp -- npx -y @lizethriveros/bcrp-cli mcp</pre>
+      </div>
+      <div class="feature">
+        <h3>Otros clientes MCP</h3>
+        <p>Siete herramientas: buscar, último valor, historial, comparar, variación, conversión e info.</p>
+<pre>{
+  "mcpServers": {
+    "bcrp": {
+      "command": "npx",
+      "args": ["-y", "@lizethriveros/bcrp-cli", "mcp"]
+    }
+  }
+}</pre>
+      </div>
+      <div class="feature">
+        <h3>Skill para agentes</h3>
+        <p>Enseña a tu asistente cuándo usarlo y qué errores evitar (rezago, frecuencias, tasas).</p>
+<pre>mkdir -p ~/.claude/skills/bcrp
+bcrp skill &gt; ~/.claude/skills/bcrp/SKILL.md</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a> y cada serie indica su fuente.</p>
+    <p>El tipo de cambio es una referencia interbancaria: bancos y casas de cambio publican el suyo. Código abierto bajo licencia MIT.</p>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var btn = document.getElementById("copy");
+  var cmd = document.getElementById("cmd");
+  if (!btn || !cmd) return;
+  btn.addEventListener("click", function () {
+    var text = cmd.textContent;
+    var done = function () {
+      btn.textContent = "Copiado";
+      setTimeout(function () { btn.textContent = "Copiar"; }, 1600);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, function () {});
+    }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import pkg from "../package.json";
 import { compareSeries, describeSeries, getLatest, getSeries, isSeriesInput, searchSeries } from "./api";
 import { OVERS, type Over, isOver } from "./calc";
@@ -40,6 +42,7 @@ Usage:
   bcrp shortcuts                     List headline indicators
   bcrp catalog [update]              Show or refresh the local series catalog
   bcrp mcp                           Run as an MCP server (stdio) for AI agents
+  bcrp skill                         Print the agent skill (SKILL.md) that teaches an AI to use bcrp
 
 Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}
 
@@ -222,6 +225,8 @@ async function main() {
       const info = { series: entries.length, generatedAt, source };
       return out(info, () => `${info.series} series (${source} catalog, generated ${generatedAt})`);
     }
+    case "skill":
+      return console.log(readFileSync(fileURLToPath(new URL("../skills/bcrp/SKILL.md", import.meta.url)), "utf8"));
     case "mcp": {
       const { startMcpServer } = await import("./mcp");
       return startMcpServer();

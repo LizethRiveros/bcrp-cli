@@ -8,6 +8,8 @@ Tables for humans, clean JSON for scripts and AI agents.
 
 **Live demo:** https://lizethriveros.github.io/bcrp-cli/
 
+Made by [Lizeth Riveros](https://github.com/LizethRiveros) at [Crafter Station](https://crafter.ing).
+
 > Unofficial project, not affiliated with the BCRP. Data comes from the public
 > [BCRPData](https://estadisticas.bcrp.gob.pe/estadisticas/series/) API.
 
@@ -261,4 +263,4 @@ bun run build       # bundles to dist/cli.js (runs on Node)
 
 ## License
 
-MIT
+MIT © Lizeth Riveros. Made at [Crafter Station](https://crafter.ing).

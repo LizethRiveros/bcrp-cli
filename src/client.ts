@@ -63,33 +63,73 @@ export class BcrpError extends Error {
   }
 }
 
+/**
+ * The API sometimes appends PHP debug HTML after the JSON (e.g. when a range has no data).
+ * Returns just the leading JSON object, or undefined if the body does not start with one.
+ */
+export function extractJson(text: string): string | undefined {
+  const body = text.trimStart();
+  if (!body.startsWith("{")) return undefined;
+  let depth = 0;
+  let inString = false;
+  for (let i = 0; i < body.length; i++) {
+    const c = body[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return body.slice(0, i + 1);
+  }
+  return undefined;
+}
+
+export interface FetchOptions {
+  /** Extra attempts when the API answers with its anti-bot page instead of data (default 2) */
+  retries?: number;
+  /** Base wait between attempts in ms, multiplied by the attempt number (default 700) */
+  delayMs?: number;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export async function fetchSeries(
   code: string,
   from: string,
   to: string,
   fetchImpl: typeof fetch = fetch,
+  { retries = 2, delayMs = 700 }: FetchOptions = {},
 ): Promise<Series> {
   const url = `${BASE}/${encodeURIComponent(code)}/json/${from}/${to}/ing`;
-  let res: Response;
-  try {
-    res = await fetchImpl(url, {
-      headers: { "user-agent": "bcrp-cli (+https://github.com/LizethRiveros/bcrp-cli)" },
-      signal: AbortSignal.timeout(30_000),
-    });
-  } catch (e) {
-    throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, code);
+  for (let attempt = 0; ; attempt++) {
+    let res: Response;
+    try {
+      res = await fetchImpl(url, {
+        headers: { "user-agent": "bcrp-cli (+https://github.com/LizethRiveros/bcrp-cli)" },
+        signal: AbortSignal.timeout(30_000),
+      });
+    } catch (e) {
+      throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, code);
+    }
+    if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${code}`, code);
+
+    const json = extractJson(await res.text());
+    if (json) return toSeries(code, JSON.parse(json) as RawResponse);
+
+    // No JSON: the API answers with an anti-bot page both when it throttles bursts and when the code does not exist.
+    if (attempt >= retries) {
+      throw new BcrpError(
+        `No data from the BCRP API for "${code}" after ${attempt + 1} attempts. The code may not exist, ` +
+          "or the BCRP's anti-bot protection is throttling requests: wait a few seconds and retry, " +
+          `or check the code with \`bcrp info ${code}\`.`,
+        code,
+      );
+    }
+    await sleep(delayMs * (attempt + 1));
   }
-  if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${code}`, code);
-  const text = await res.text();
-  let raw: RawResponse;
-  try {
-    raw = JSON.parse(text);
-  } catch {
-    throw new BcrpError(
-      `Series "${code}" not found, or the date range ${from} to ${to} is not valid for it. Try \`bcrp search\` to find series codes.`,
-      code,
-    );
-  }
+}
+
+function toSeries(code: string, raw: RawResponse): Series {
   const s = raw.config.series[0];
   return {
     code,

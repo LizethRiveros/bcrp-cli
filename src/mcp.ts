@@ -2,7 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import pkg from "../package.json";
-import { describeSeries, getLatest, getSeries, searchSeries } from "./api";
+import { compareSeries, describeSeries, getLatest, getSeries, searchSeries } from "./api";
 import { FREQUENCIES } from "./dates";
 import { SHORTCUTS } from "./shortcuts";
 
@@ -70,6 +70,22 @@ export function createServer(): McpServer {
       },
     },
     ({ series, from, to, last }) => run(() => getSeries({ series, from, to, last })),
+  );
+
+  server.registerTool(
+    "bcrp_compare",
+    {
+      description:
+        "Line up 2 to 6 BCRP series of the same frequency by period (e.g. inflation vs the policy rate). " +
+        "Returns one row per period with a value per series. Series must share a frequency.",
+      inputSchema: {
+        series: z.array(seriesParam).min(2).max(6).describe("Series codes or shortcut names to compare"),
+        from: z.string().optional().describe("Start date"),
+        to: z.string().optional().describe("End date (default: today)"),
+        last: z.number().int().min(1).max(5000).optional().describe("Return only the last N periods"),
+      },
+    },
+    ({ series, from, to, last }) => run(() => compareSeries(series, { from, to, last })),
   );
 
   server.registerTool(

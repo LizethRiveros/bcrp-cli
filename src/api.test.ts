@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { describeSeries, getLatest, getSeries, isSeriesInput } from "./api";
+import { compareSeries, describeSeries, getLatest, getSeries, isSeriesInput } from "./api";
 import { SHORTCUTS, resolveCode, shortcutName } from "./shortcuts";
 
 /** A fake BCRP API that records requested URLs and returns the given periods. */
@@ -73,4 +73,56 @@ test("getLatest fails clearly when nothing is published", async () => {
 
 test("unknown series input gives an actionable error", async () => {
   await expect(getSeries({ series: "banana" })).rejects.toThrow(/bcrp search/);
+});
+
+test("getSeries drops the unpublished tail unless an end date is given", async () => {
+  const periods = [
+    { name: "01.Set.26", values: ["3.1"] },
+    { name: "02.Set.26", values: ["3.2"] },
+    { name: "03.Set.26", values: ["n.d."] },
+  ];
+  const open = await getSeries({ series: "fx", last: 5 }, fakeApi(periods).impl);
+  expect(open.points.map((p) => p.value)).toEqual([3.1, 3.2]);
+  const explicit = await getSeries({ series: "fx", from: "2026-09", to: "2026-09" }, fakeApi(periods).impl);
+  expect(explicit.points).toHaveLength(3);
+});
+
+/** A fake API that serves different periods per series code. */
+function fakeApiByCode(data: Record<string, { name: string; values: string[] }[]>) {
+  return (async (url: string) => {
+    const code = url.match(/\/api\/([^/]+)\/json/)![1]!;
+    return new Response(
+      JSON.stringify({ config: { title: "T", series: [{ name: `S-${code}`, dec: "2" }] }, periods: data[code] }),
+    );
+  }) as unknown as typeof fetch;
+}
+
+test("compareSeries aligns series by period and fills gaps with null", async () => {
+  const impl = fakeApiByCode({
+    PN01273PM: [
+      { name: "Jun.2026", values: ["4.0"] },
+      { name: "Jul.2026", values: ["4.1"] },
+      { name: "Aug.2026", values: ["4.4"] },
+    ],
+    PN01728AM: [
+      { name: "Jun.2026", values: ["1.8"] },
+      { name: "Jul.2026", values: ["3.6"] },
+    ],
+  });
+  const c = await compareSeries(["inflation", "gdp"], { last: 3 }, impl);
+  expect(c.frequency).toBe("monthly");
+  expect(c.series.map((s) => s.code)).toEqual(["PN01273PM", "PN01728AM"]);
+  expect(c.rows).toEqual([
+    { period: "2026-06", values: [4.0, 1.8] },
+    { period: "2026-07", values: [4.1, 3.6] },
+    { period: "2026-08", values: [4.4, null] },
+  ]);
+});
+
+test("compareSeries validates its inputs", async () => {
+  await expect(compareSeries(["fx"])).rejects.toThrow(/at least two/);
+  await expect(compareSeries(["fx", "usd"])).rejects.toThrow(/at least two/); // same series
+  await expect(compareSeries(["fx", "inflation"], {}, fakeApiByCode({ PD04638PD: [], PN01273PM: [] }))).rejects.toThrow(
+    /different frequencies/,
+  );
 });

@@ -62,7 +62,14 @@ export async function getSeries(q: SeriesQuery, fetchImpl?: typeof fetch): Promi
   const from = q.from ? toApiDate(q.from, frequency, "from") : window.from;
   const to = q.to ? toApiDate(q.to, frequency, "to") : window.to;
   const series = await fetchSeries(code, from, to, fetchImpl);
-  const points = q.last ? series.points.slice(-q.last) : series.points;
+  let points = series.points;
+  if (!q.to) {
+    // The API lists periods up to today even when nothing is published yet: drop that unpublished tail.
+    let end = points.length;
+    while (end > 0 && points[end - 1]!.value === null) end--;
+    points = points.slice(0, end);
+  }
+  if (q.last) points = points.slice(-q.last);
   return { ...series, points, frequency, from, to };
 }
 
@@ -108,5 +115,54 @@ export function describeSeries(input: string): SeriesInfo {
     frequency,
     ...(shortcut ? { shortcut } : {}),
     apiUrl: `https://estadisticas.bcrp.gob.pe/estadisticas/series/api/${code}/json`,
+  };
+}
+
+export interface CompareResult {
+  frequency: Frequency;
+  series: { code: string; name: string; decimals: number }[];
+  /** One row per period, with one value per series in the same order as `series` */
+  rows: { period: string; values: (number | null)[] }[];
+}
+
+const MAX_COMPARE = 6;
+
+/** Fetches several series of the same frequency and aligns them by period. */
+export async function compareSeries(
+  inputs: string[],
+  q: Omit<SeriesQuery, "series"> = {},
+  fetchImpl?: typeof fetch,
+): Promise<CompareResult> {
+  const unique = [...new Set(inputs.map((i) => resolveCode(i)))];
+  if (unique.length < 2) throw new BcrpError("compare needs at least two different series");
+  if (unique.length > MAX_COMPARE) throw new BcrpError(`compare supports up to ${MAX_COMPARE} series`);
+
+  // One at a time: bursts of parallel requests trigger the BCRP's anti-bot protection.
+  const results: SeriesResult[] = [];
+  for (const series of unique) results.push(await getSeries({ series, ...q }, fetchImpl));
+  const frequency = results[0]!.frequency;
+  const mismatch = results.find((r) => r.frequency !== frequency);
+  if (mismatch) {
+    throw new BcrpError(
+      `Cannot compare series of different frequencies: ${results[0]!.code} is ${frequency} but ${mismatch.code} is ${mismatch.frequency}. ` +
+        "Pick series with the same frequency (see `bcrp search --freq`).",
+    );
+  }
+
+  const byPeriod = new Map<string, (number | null)[]>();
+  results.forEach((r, i) => {
+    for (const p of r.points) {
+      const row = byPeriod.get(p.period) ?? results.map(() => null as number | null);
+      row[i] = p.value;
+      byPeriod.set(p.period, row);
+    }
+  });
+  let rows = [...byPeriod].sort(([a], [b]) => a.localeCompare(b)).map(([period, values]) => ({ period, values }));
+  if (q.last) rows = rows.slice(-q.last);
+
+  return {
+    frequency,
+    series: results.map((r) => ({ code: r.code, name: r.name, decimals: r.decimals })),
+    rows,
   };
 }

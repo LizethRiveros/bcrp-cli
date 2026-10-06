@@ -1,9 +1,20 @@
 #!/usr/bin/env node
 import pkg from "../package.json";
-import { describeSeries, getLatest, getSeries, isSeriesInput, searchSeries } from "./api";
+import { compareSeries, describeSeries, getLatest, getSeries, isSeriesInput, searchSeries } from "./api";
 import { downloadCatalog, encodeCatalog, loadCatalog, saveUserCatalog } from "./catalog";
 import { FREQUENCIES, parseFrequency } from "./dates";
-import { formatInfo, formatLatest, formatSearch, formatSeries, formatShortcuts } from "./format";
+import {
+  csvCompare,
+  csvLatest,
+  csvSearch,
+  csvSeries,
+  formatCompare,
+  formatInfo,
+  formatLatest,
+  formatSearch,
+  formatSeries,
+  formatShortcuts,
+} from "./format";
 import { SHORTCUTS } from "./shortcuts";
 
 const HELP = `bcrp ${pkg.version} - BCRP (Banco Central de Reserva del Perú) statistics from the terminal
@@ -13,6 +24,7 @@ Usage:
   bcrp <shortcut|CODE> --last 12     Recent observations
   bcrp get <shortcut|CODE> [--from D] [--to D] [--last N]
   bcrp latest <shortcut|CODE>        Most recent value
+  bcrp compare <A> <B> [...] [--last N]   Line up 2-6 series of the same frequency
   bcrp search <text> [--freq F] [--limit N]
   bcrp info <shortcut|CODE>          Describe a series
   bcrp shortcuts                     List headline indicators
@@ -23,16 +35,18 @@ Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}
 
 Dates: YYYY, YYYY-MM, YYYY-MM-DD or YYYY-Qn.   Frequencies: ${FREQUENCIES.join(", ")}.
 
-Output: a table in a terminal, JSON when piped. Force with --json / --table.
+Output: a table in a terminal, JSON when piped. Force with --json / --table, or export with --csv.
 
 Examples:
   bcrp fx
   bcrp inflation --last 12
   bcrp search "tasa de interés" --freq monthly
   bcrp get PD04638PD --from 2026-01 --to 2026-09 --json
+  bcrp compare inflation rate --last 12
+  bcrp get fx --from 2026-01 --csv > fx.csv
 `;
 
-const BOOLEAN_FLAGS = new Set(["json", "table", "help", "version"]);
+const BOOLEAN_FLAGS = new Set(["json", "table", "csv", "help", "version"]);
 const VALUE_FLAGS = new Set(["from", "to", "last", "freq", "limit"]);
 
 interface Parsed {
@@ -80,7 +94,13 @@ async function main() {
   const [cmd, ...rest] = positional;
 
   const json = flags.json === true || (flags.table !== true && !process.stdout.isTTY);
-  const out = (data: unknown, text: () => string) => console.log(json ? JSON.stringify(data, null, 2) : text());
+  const out = (data: unknown, text: () => string, csv?: () => string) => {
+    if (flags.csv === true) {
+      if (!csv) throw new UsageError("--csv is not available for this command");
+      return console.log(csv());
+    }
+    console.log(json ? JSON.stringify(data, null, 2) : text());
+  };
 
   if (flags.version) return console.log(pkg.version);
   if (!cmd || cmd === "help" || flags.help) return console.log(HELP);
@@ -96,10 +116,10 @@ async function main() {
     if (!input) throw new UsageError("Missing series. Pass a shortcut (fx, inflation, ...) or a series code.");
     if (hasRange) {
       const s = await getSeries({ series: input, ...query() });
-      out(s, () => formatSeries(s));
+      out(s, () => formatSeries(s), () => csvSeries(s));
     } else {
       const l = await getLatest(input);
-      out(l, () => formatLatest(l));
+      out(l, () => formatLatest(l), () => csvLatest(l));
     }
   };
 
@@ -108,7 +128,12 @@ async function main() {
       const input = rest[0];
       if (!input) throw new UsageError("Usage: bcrp get <shortcut|CODE> [--from D] [--to D] [--last N]");
       const s = await getSeries({ series: input, ...query() });
-      return out(s, () => formatSeries(s));
+      return out(s, () => formatSeries(s), () => csvSeries(s));
+    }
+    case "compare": {
+      if (rest.length < 2) throw new UsageError("Usage: bcrp compare <A> <B> [...] [--from D] [--to D] [--last N]");
+      const c = await compareSeries(rest, query());
+      return out(c, () => formatCompare(c), () => csvCompare(c));
     }
     case "latest":
       if (!rest[0]) throw new UsageError("Usage: bcrp latest <shortcut|CODE>");
@@ -120,7 +145,7 @@ async function main() {
       const frequency = freqInput ? parseFrequency(freqInput) : undefined;
       if (freqInput && !frequency) throw new UsageError(`--freq must be one of: ${FREQUENCIES.join(", ")}`);
       const results = searchSeries(text, { frequency, limit: intFlag(flags, "limit") });
-      return out(results, () => formatSearch(results));
+      return out(results, () => formatSearch(results), () => csvSearch(results));
     }
     case "info": {
       if (!rest[0]) throw new UsageError("Usage: bcrp info <shortcut|CODE>");

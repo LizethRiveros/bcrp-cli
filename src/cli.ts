@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import pkg from "../package.json";
 import { compareSeries, describeSeries, getLatest, getSeries, isSeriesInput, searchSeries } from "./api";
@@ -42,7 +44,7 @@ Usage:
   bcrp shortcuts                     List headline indicators
   bcrp catalog [update]              Show or refresh the local series catalog
   bcrp mcp                           Run as an MCP server (stdio) for AI agents
-  bcrp skill                         Print the agent skill (SKILL.md) that teaches an AI to use bcrp
+  bcrp skill [install]               Print the agent skill, or install it for Claude Code (~/.claude/skills)
 
 Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}
 
@@ -225,8 +227,19 @@ async function main() {
       const info = { series: entries.length, generatedAt, source };
       return out(info, () => `${info.series} series (${source} catalog, generated ${generatedAt})`);
     }
-    case "skill":
-      return console.log(readFileSync(fileURLToPath(new URL("../skills/bcrp/SKILL.md", import.meta.url)), "utf8"));
+    case "skill": {
+      const text = readFileSync(fileURLToPath(new URL("../skills/bcrp/SKILL.md", import.meta.url)), "utf8");
+      if (rest[0] === undefined) {
+        process.stdout.write(text); // the file already ends with a newline
+        return;
+      }
+      if (rest[0] !== "install") throw new UsageError("Usage: bcrp skill [install]");
+      // Written by Node as UTF-8, which a shell redirect on Windows PowerShell would not do.
+      const file = join(homedir(), ".claude", "skills", "bcrp", "SKILL.md");
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, text);
+      return console.log(`Installed the bcrp skill to ${file}`);
+    }
     case "mcp": {
       const { startMcpServer } = await import("./mcp");
       return startMcpServer();

@@ -6,6 +6,8 @@ commodity prices and **~17,000 more series**. No API key required.
 
 Tables for humans, clean JSON for scripts and AI agents.
 
+**Live demo:** https://lizethriveros.github.io/bcrp-cli/
+
 > Unofficial project, not affiliated with the BCRP. Data comes from the public
 > [BCRPData](https://estadisticas.bcrp.gob.pe/estadisticas/series/) API.
 
@@ -67,7 +69,8 @@ bcrp convert 100 usd                   # at the BCRP interbank rate (or --date 2
 bcrp check fx --above 3.50             # alert check for scripts and schedulers
 bcrp get fx --from 2026-01 --csv > fx.csv
 bcrp search "tasa de interés" --freq monthly
-bcrp info PD04638PD                    # what is this series?
+bcrp info PD04638PD                    # what is this series? source, description, last update
+bcrp skill install                     # install the agent skill (see below)
 bcrp shortcuts                         # list headline indicators
 ```
 
@@ -210,7 +213,18 @@ Claude Desktop / any MCP client (`mcpServers` config):
 }
 ```
 
-Then ask things like *"What's the dollar at today?"* or *"Compare Peru's inflation and the policy rate this year."*
+Then ask things like *"What's the dollar at today?"* or *"How much has the dollar risen this year?"*
+
+### Agent skill
+
+The MCP tools say *what* an agent can call; the skill teaches it *when* and what to watch out for: publication
+lag, comparing only series of the same frequency, not treating a percentage as a level, and being gentle with the
+API. It ships inside the package:
+
+```bash
+bcrp skill install      # copies SKILL.md to ~/.claude/skills/bcrp for Claude Code
+bcrp skill              # or print it, to put it wherever your agent reads skills
+```
 
 ## Keeping the catalog fresh
 

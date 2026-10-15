@@ -1,4 +1,4 @@
-import type { ChangeResult, Conversion, ThresholdCheck } from "./insights";
+import type { ChangeResult, Conversion, StatsResult, ThresholdCheck } from "./insights";
 import type { CompareResult, LatestResult, SeriesInfo, SeriesResult } from "./api";
 import type { CatalogEntry } from "./catalog";
 import { SHORTCUTS } from "./shortcuts";
@@ -175,7 +175,7 @@ export function formatConversion(c: Conversion): string {
   const money = (v: number) => v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   return [
     `${money(c.amount)} ${c.from.toUpperCase()} = ${money(c.result)} ${c.to.toUpperCase()}`,
-    `Rate: ${fmtNumber(c.rate, 3)} S/ per US$ · interbank ${c.side === "sell" ? "sell" : "buy"} · ${c.ratePeriod}`,
+    `Rate: ${fmtNumber(c.rate, 3)} S/ per ${c.rateCurrency === "eur" ? "€" : "US$"} · interbank ${c.side} · ${c.ratePeriod}`,
     `${c.series}${c.source ? ` · Source: ${c.source}` : ""}`,
     "Reference rate; banks and exchange houses quote their own.",
   ].join("\n");
@@ -185,6 +185,38 @@ export function csvConversion(c: Conversion): string {
   return toCsv(
     ["amount", "from", "to", "result", "rate", "rate_period", "side"],
     [[c.amount, c.from, c.to, c.result, c.rate, c.ratePeriod, c.side]],
+  );
+}
+
+export function formatStats(s: StatsResult): string {
+  const d = s.decimals;
+  const at = (o: { period: string; value: number }) => `${fmtNumber(o.value, d)}  (${o.period})`;
+  const pct = s.changePct === null ? "" : `  (${s.changePct > 0 ? "+" : ""}${s.changePct.toFixed(2)}%)`;
+  const rows: [string, string][] = [
+    ["Observations", String(s.count)],
+    ["First", at(s.first)],
+    ["Last", at(s.last)],
+    ["Change", `${signed(s.change, d)}${pct}`],
+    ["Min", at(s.min)],
+    ["Max", at(s.max)],
+    ["Mean", fmtNumber(s.mean, d)],
+    ["Median", fmtNumber(s.median, d)],
+    ["Std dev", s.stdev === null ? "n.d." : fmtNumber(s.stdev, d)],
+  ];
+  const label = Math.max(...rows.map(([k]) => k.length));
+  return [
+    s.name,
+    `${s.code} · ${s.frequency}`,
+    ...(s.source ? [`Source: ${s.source}`] : []),
+    "",
+    ...rows.map(([k, v]) => `${k.padEnd(label)}  ${v}`),
+  ].join("\n");
+}
+
+export function csvStats(s: StatsResult): string {
+  return toCsv(
+    ["code", "count", "first_period", "first", "last_period", "last", "change", "change_pct", "min", "max", "mean", "median", "stdev"],
+    [[s.code, s.count, s.first.period, s.first.value, s.last.period, s.last.value, s.change, s.changePct, s.min.value, s.max.value, s.mean, s.median, s.stdev]],
   );
 }
 

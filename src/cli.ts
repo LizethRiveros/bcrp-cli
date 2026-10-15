@@ -15,6 +15,7 @@ import {
   csvLatest,
   csvSearch,
   csvSeries,
+  csvStats,
   formatChange,
   formatCheck,
   formatCompare,
@@ -24,9 +25,22 @@ import {
   formatSearch,
   formatSeries,
   formatShortcuts,
+  formatStats,
 } from "./format";
-import { type FxSide, checkThreshold, convertCurrency, getChange } from "./insights";
-import { SHORTCUTS } from "./shortcuts";
+import type { Currency } from "./calc";
+import { type FxSide, checkThreshold, convertCurrency, getChange, getStats } from "./insights";
+import { SHORTCUTS, closest, shortcutWords } from "./shortcuts";
+
+const COMMANDS = [
+  "get", "latest", "compare", "change", "stats", "convert", "check", "search", "info",
+  "shortcuts", "catalog", "mcp", "skill", "help",
+];
+
+const CURRENCY_WORDS: Record<string, Currency> = {
+  usd: "usd", dolar: "usd", dolares: "usd", "dólar": "usd", "dólares": "usd", $: "usd",
+  eur: "eur", euro: "eur", euros: "eur", "€": "eur",
+  pen: "pen", sol: "pen", soles: "pen", "s/": "pen",
+};
 
 const HELP = `bcrp ${pkg.version} - BCRP (Banco Central de Reserva del Perú) statistics from the terminal
 
@@ -37,7 +51,8 @@ Usage:
   bcrp latest <shortcut|CODE>        Most recent value
   bcrp compare <A> <B> [...] [--last N]   Line up 2-6 series of the same frequency
   bcrp change <shortcut|CODE> [--over 1w|1m|3m|6m|1y|ytd]   How much it moved
-  bcrp convert <amount> <usd|pen> [--date D] [--side buy|sell]   Convert at the BCRP rate
+  bcrp stats <shortcut|CODE> [--from D] [--to D] [--last N]   Min, max, mean, median, net change
+  bcrp convert <amount> <usd|eur|pen> [--to usd|eur] [--date D] [--side buy|sell]   Convert at the BCRP rate
   bcrp check <shortcut|CODE> --above N | --below N   Alert check for scripts (exit 0 = triggered, 3 = not)
   bcrp search <text> [--freq F] [--limit N]
   bcrp info <shortcut|CODE>          Describe a series
@@ -61,7 +76,9 @@ Examples:
   bcrp compare inflation rate --last 12
   bcrp get fx --from 2026-01 --csv > fx.csv
   bcrp change fx --over ytd
+  bcrp stats inflation --last 24
   bcrp convert 100 usd
+  bcrp convert 500 eur
   bcrp check fx --above 3.5 && echo "the dollar is above 3.50"
 `;
 
@@ -164,20 +181,24 @@ async function main() {
       const c = await getChange(rest[0], over as Over | undefined);
       return out(c, () => formatChange(c), () => csvChange(c));
     }
+    case "stats": {
+      if (!rest[0]) throw new UsageError("Usage: bcrp stats <shortcut|CODE> [--from D] [--to D] [--last N]");
+      const s = await getStats({ series: rest[0], ...query() });
+      return out(s, () => formatStats(s), () => csvStats(s));
+    }
     case "convert": {
-      const usage = "Usage: bcrp convert <amount> <usd|pen> [--date D] [--side buy|sell]";
+      const usage = "Usage: bcrp convert <amount> <usd|eur|pen> [--to usd|eur] [--date D] [--side buy|sell]";
       const amount = Number((rest[0] ?? "").replace(/,/g, ""));
       if (!rest[0] || !Number.isFinite(amount)) throw new UsageError(usage);
-      const word = (rest[1] ?? "").toLowerCase();
-      const from = ["usd", "dolar", "dolares", "dólar", "dólares", "$"].includes(word)
-        ? "usd"
-        : ["pen", "sol", "soles", "s/"].includes(word)
-          ? "pen"
-          : undefined;
+      const from = CURRENCY_WORDS[(rest[1] ?? "").toLowerCase()];
       if (!from) throw new UsageError(usage);
+      // Here --to is the target currency (for soles); elsewhere it is a date bound.
+      const toWord = strFlag(flags, "to");
+      const to = toWord === undefined ? undefined : CURRENCY_WORDS[toWord.toLowerCase()];
+      if (toWord !== undefined && !to) throw new UsageError("--to must be usd, eur or pen");
       const side = strFlag(flags, "side");
       if (side !== undefined && side !== "buy" && side !== "sell") throw new UsageError("--side must be buy or sell");
-      const c = await convertCurrency({ amount, from, date: strFlag(flags, "date"), side: side as FxSide | undefined });
+      const c = await convertCurrency({ amount, from, to, date: strFlag(flags, "date"), side: side as FxSide | undefined });
       return out(c, () => formatConversion(c), () => csvConversion(c));
     }
     case "check": {
@@ -246,7 +267,8 @@ async function main() {
     }
     default:
       if (isSeriesInput(cmd)) return series(cmd);
-      throw new UsageError(`Unknown command "${cmd}". Run \`bcrp help\`.`);
+      const guess = closest(cmd, [...COMMANDS, ...shortcutWords()]);
+      throw new UsageError(`Unknown command "${cmd}"${guess ? ` (did you mean "${guess}"?)` : ""}. Run \`bcrp help\`.`);
   }
 }
 

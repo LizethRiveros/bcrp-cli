@@ -1,6 +1,6 @@
 ---
 name: bcrp
-description: Official Peruvian macroeconomic data from the BCRP (Banco Central de Reserva del Perú) - exchange rate (dólar, tipo de cambio), inflation, policy rate, reserves, GDP (PBI), copper and gold prices, and ~17,000 other series. Use whenever the user asks for current or historical Peruvian economic figures, wants to compare series, measure a change, or convert USD/PEN, instead of answering from memory. Needs the `bcrp` CLI (npx @lizethriveros/bcrp-cli) or the bcrp MCP server.
+description: Official Peruvian macroeconomic data from the BCRP (Banco Central de Reserva del Perú) - exchange rate (dólar, tipo de cambio), inflation, policy rate, reserves, GDP (PBI), copper, gold and silver prices, trade balance, unemployment, and ~17,000 other series. Use whenever the user asks for current or historical Peruvian economic figures, wants to compare series, measure a change, summarize a period, or convert USD/EUR to PEN, instead of answering from memory. Needs the `bcrp` CLI (npx @lizethriveros/bcrp-cli) or the bcrp MCP server.
 ---
 
 # bcrp: official Peruvian economic data
@@ -20,24 +20,28 @@ Either the MCP tools (if the `bcrp` server is connected) or the CLI. Same operat
 | History | `bcrp get inflation --last 12` / `--from 2026-01 --to 2026-09` | `bcrp_get` |
 | Several series side by side | `bcrp compare inflation gdp --last 12` | `bcrp_compare` |
 | How much did it move? | `bcrp change fx --over ytd` | `bcrp_change` |
-| USD <-> PEN | `bcrp convert 100 usd [--date 2026-03-15]` | `bcrp_convert` |
-| Alert test for a script | `bcrp check fx --above 3.50` | (use `bcrp_latest`) |
+| Min / max / mean / net change over a period | `bcrp stats inflation --last 24` | `bcrp_stats` |
+| USD or EUR <-> PEN | `bcrp convert 100 usd [--date 2026-03-15]`, `bcrp convert 500 eur` | `bcrp_convert` |
+| Alert test for a script | `bcrp check fx --above 3.50` | `bcrp_check` |
+| List the shortcuts | `bcrp shortcuts` | `bcrp_shortcuts` |
 
 Without a terminal, run it as `npx -y @lizethriveros/bcrp-cli <command>`. The CLI prints JSON when its output is
 piped; add `--json` to be sure, `--csv` to export.
 
 ## Headline shortcuts
 
-`fx` (USD/PEN interbank, daily), `inflation` (Lima CPI, 12-month %), `rate` (policy rate), `reserves` (net
-international reserves, US$ millions), `gdp` (year-over-year %), `copper`, `gold`. Aliases such as `dolar`, `ipc`,
-`tasa`, `rin`, `pbi`, `cobre`, `oro` also work. Anything else is a series code like `PD04638PD`.
+`fx` (USD/PEN interbank, daily), `euro` (EUR/PEN, daily), `inflation` (Lima CPI, 12-month %), `rate` (policy
+rate), `interbank` (interbank interest rate, soles), `reserves` (net international reserves, US$ millions), `gdp`
+(year-over-year %), `unemployment` (Lima, 3-month average), `exports`, `imports` and `trade` (monthly FOB, US$
+millions), `copper`, `gold`, `silver`, `zinc`. Aliases such as `dolar`, `ipc`, `tasa`, `rin`, `pbi`, `cobre`,
+`oro`, `plata`, `desempleo` also work. Anything else is a series code like `PD04638PD`.
 
 ## Workflow
 
 1. Headline indicator? Use its shortcut. Otherwise `bcrp search` (Spanish or English, accents optional), pick a
    series, and confirm with `bcrp info` when several look alike.
 2. **Never invent or guess a series code.** If search finds nothing, say so.
-3. Fetch with `latest` / `get` / `change` / `compare`.
+3. Fetch with `latest` / `get` / `change` / `stats` / `compare`.
 4. Answer with the value, **its period** and the **source** (the output includes `Source:`).
 
 ## Pitfalls that change the answer
@@ -53,7 +57,7 @@ international reserves, US$ millions), `gdp` (year-over-year %), `copper`, `gold
 - **`change` refuses some questions** (a weekly change of a monthly series, or not enough history). Relay that and
   suggest a longer period rather than working around it.
 - **`convert` is a reference rate** (interbank). Banks and exchange houses quote their own: say so when money decisions
-  depend on it. USD/PEN only.
+  depend on it. Only USD and EUR against the sol; no cross rates (USD to EUR).
 - **Be gentle with the API.** The BCRP rejects bursts of requests. Do not fire many calls in parallel; prefer
   `compare` (one request for several series). Results are cached for 10 minutes.
 - **Dates:** `YYYY`, `YYYY-MM`, `YYYY-MM-DD`, `YYYY-Qn`.

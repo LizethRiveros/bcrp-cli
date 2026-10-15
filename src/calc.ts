@@ -127,9 +127,57 @@ export function computeChange(points: Point[], over: Over, { rateLike = false } 
   return { over, latest, base, change, changePct };
 }
 
-export type Currency = "usd" | "pen";
+export type Currency = "usd" | "eur" | "pen";
 
-/** Converts using a S/ per US$ rate. */
+/** Converts using a S/ per foreign-currency-unit rate: foreign -> soles multiplies, soles -> foreign divides. */
 export function convertAmount(amount: number, from: Currency, rate: number): number {
-  return from === "usd" ? amount * rate : amount / rate;
+  return from === "pen" ? amount / rate : amount * rate;
+}
+
+export interface Stats {
+  count: number;
+  first: Observation;
+  last: Observation;
+  min: Observation;
+  max: Observation;
+  mean: number;
+  median: number;
+  /** Sample standard deviation; null with fewer than two observations */
+  stdev: number | null;
+  /** last - first, in the series' own units (points for rates) */
+  change: number;
+  /** Relative change in %, or null for rate-like series or a zero first value */
+  changePct: number | null;
+}
+
+/** Summary statistics of the published observations (gaps are ignored). Undefined when there are none. */
+export function computeStats(points: Point[], { rateLike = false } = {}): Stats | undefined {
+  const obs = points
+    .filter((p): p is Observation => p.value !== null)
+    .sort((a, b) => a.period.localeCompare(b.period));
+  if (obs.length === 0) return undefined;
+
+  const values = obs.map((o) => o.value);
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median = sorted.length % 2 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
+  const mean = values.reduce((a, b) => a + b, 0) / values.length;
+  const stdev =
+    values.length < 2 ? null : Math.sqrt(values.reduce((a, v) => a + (v - mean) ** 2, 0) / (values.length - 1));
+
+  const first = obs[0]!;
+  const last = obs[obs.length - 1]!;
+  const change = last.value - first.value;
+  return {
+    count: obs.length,
+    first,
+    last,
+    min: obs.reduce((m, o) => (o.value < m.value ? o : m)),
+    max: obs.reduce((m, o) => (o.value > m.value ? o : m)),
+    mean,
+    median,
+    stdev,
+    change,
+    changePct: rateLike || first.value === 0 ? null : (change / Math.abs(first.value)) * 100,
+  };
 }

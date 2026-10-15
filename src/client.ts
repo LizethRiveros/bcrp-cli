@@ -126,9 +126,20 @@ export async function fetchSeriesSet(
         signal: AbortSignal.timeout(30_000),
       });
     } catch (e) {
+      if (attempt < retries) {
+        await sleep(delayMs * (attempt + 1));
+        continue;
+      }
       throw new BcrpError(`Could not reach the BCRP API: ${e instanceof Error ? e.message : e}`, label);
     }
-    if (!res.ok) throw new BcrpError(`BCRP API error ${res.status} for ${label}`, label);
+    if (!res.ok) {
+      // Temporary server trouble (rate limit, 5xx) is worth another try; a 4xx means the request itself is wrong.
+      if ((res.status === 429 || res.status >= 500) && attempt < retries) {
+        await sleep(delayMs * (attempt + 1));
+        continue;
+      }
+      throw new BcrpError(`BCRP API error ${res.status} for ${label}`, label);
+    }
 
     const json = extractJson(await res.text());
     if (json) return toSeriesSet(JSON.parse(json) as RawResponse);

@@ -145,3 +145,34 @@ test("a period shorter than the series' frequency is refused, longer ones are fi
   // year-to-date is only meaningful once the year has started
   expect(computeChange([{ period: "2025-12", value: 1 }, { period: "2026-01", value: 2 }], "ytd")).toBeUndefined();
 });
+
+test("computeStats summarizes the published observations", async () => {
+  const { computeStats } = await import("./calc");
+  const pts = [
+    { period: "2026-03", value: 4 },
+    { period: "2026-01", value: 2 },
+    { period: "2026-02", value: null },
+    { period: "2026-04", value: 6 },
+  ];
+  const s = computeStats(pts)!;
+  expect(s.count).toBe(3);
+  expect(s.first).toEqual({ period: "2026-01", value: 2 });
+  expect(s.last).toEqual({ period: "2026-04", value: 6 });
+  expect(s.min.value).toBe(2);
+  expect(s.max.period).toBe("2026-04");
+  expect(s.mean).toBe(4);
+  expect(s.median).toBe(4);
+  expect(s.stdev).toBeCloseTo(2, 10);
+  expect(s.change).toBe(4);
+  expect(s.changePct).toBe(200);
+  expect(computeStats(pts, { rateLike: true })!.changePct).toBeNull();
+  expect(computeStats([{ period: "2026", value: null }])).toBeUndefined();
+  expect(computeStats([{ period: "2026", value: 5 }])!.stdev).toBeNull();
+});
+
+test("convertAmount multiplies foreign amounts and divides soles", async () => {
+  const { convertAmount } = await import("./calc");
+  expect(convertAmount(100, "usd", 3.5)).toBe(350);
+  expect(convertAmount(100, "eur", 4)).toBe(400);
+  expect(convertAmount(350, "pen", 3.5)).toBe(100);
+});

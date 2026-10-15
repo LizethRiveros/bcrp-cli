@@ -67,7 +67,9 @@ bcrp <shortcut|CODE> --last 12         # recent observations
 bcrp get <shortcut|CODE> --from 2026-01 --to 2026-09
 bcrp compare inflation gdp --last 6    # line up 2-6 series of the same frequency
 bcrp change fx --over ytd              # how much it moved (1w, 1m, 3m, 6m, 1y, ytd)
+bcrp stats inflation --last 24         # min, max, mean, median, net change over a period
 bcrp convert 100 usd                   # at the BCRP interbank rate (or --date 2026-03-15)
+bcrp convert 500 eur                   # euros work too; soles -> euros: bcrp convert 2000 pen --to eur
 bcrp check fx --above 3.50             # alert check for scripts and schedulers
 bcrp get fx --from 2026-01 --csv > fx.csv
 bcrp search "tasa de interés" --freq monthly
@@ -87,6 +89,14 @@ bcrp shortcuts                         # list headline indicators
 | `gdp` | GDP, year-over-year % change (monthly) | `pbi` |
 | `copper` | Copper, London (daily) | `cobre` |
 | `gold` | Gold, London (daily) | `oro` |
+| `silver` | Silver, H. Harman (daily) | `plata` |
+| `zinc` | Zinc, London (daily) | |
+| `euro` | EUR/PEN interbank exchange rate, sell (daily) | `eur` |
+| `interbank` | Interbank interest rate in soles (daily) | `interbancaria` |
+| `unemployment` | Unemployment rate, Lima, 3-month average (monthly) | `desempleo` |
+| `exports` | Exports, FOB US$ millions (monthly) | `exportaciones` |
+| `imports` | Imports, FOB US$ millions (monthly) | `importaciones` |
+| `trade` | Trade balance, FOB US$ millions (monthly) | `balanza`, `trade-balance` |
 
 ### Finding any other series
 
@@ -144,7 +154,30 @@ Series that are already rates or percentages (inflation, interest rates) report 
 percentage of a percentage. A period shorter than the series' own frequency (a weekly change of a monthly
 series) is refused instead of comparing the wrong periods.
 
-### Converting dollars and soles
+### Summary statistics
+
+`bcrp stats` summarizes a period without pulling every point: observations, first and last value, net change,
+min and max (with their periods), mean, median and standard deviation. Rates and percentages report the change in
+points, as with `change`. Without a range it uses a recent default window.
+
+```console
+$ bcrp stats inflation --last 12
+Índice de precios Lima Metropolitana (var% 12 meses) - IPC
+PN01273PM · monthly
+Source: INEI
+
+Observations  12
+First         1.35  (2025-10)
+Last          4.55  (2026-09)
+Change        +3.20
+Min           1.35  (2025-10)
+Max           4.55  (2026-09)
+Mean          3.08
+Median        3.85
+Std dev       1.31
+```
+
+### Converting dollars, euros and soles
 
 ```console
 $ bcrp convert 100 usd
@@ -155,7 +188,7 @@ Reference rate; banks and exchange houses quote their own.
 ```
 
 `--date 2026-03-15` uses the last rate on or before that date, and `--side buy` uses the interbank buy rate.
-Only USD/PEN is supported.
+USD and EUR against the sol are supported (`bcrp convert 2000 pen --to eur`); cross rates such as USD to EUR are refused.
 
 ### Alerts
 
@@ -193,8 +226,8 @@ bcrp compare inflation gdp --last 12 --csv > macro.csv
 ## Use it from an AI agent (MCP)
 
 `bcrp mcp` starts a [Model Context Protocol](https://modelcontextprotocol.io) server over stdio with
-seven tools: `bcrp_search`, `bcrp_latest`, `bcrp_get`, `bcrp_compare`, `bcrp_change`, `bcrp_convert` and
-`bcrp_info`.
+ten tools: `bcrp_search`, `bcrp_latest`, `bcrp_get`, `bcrp_compare`, `bcrp_change`, `bcrp_stats`, `bcrp_convert`,
+`bcrp_check`, `bcrp_shortcuts` and `bcrp_info`.
 
 Claude Code:
 
@@ -257,8 +290,8 @@ bun run build       # bundles to dist/cli.js (runs on Node)
   description, methodology link and last update when BCRPData provides them.
 - Responses are cached for 10 minutes in `~/.bcrp/cache` (only answers with data). Use `--no-cache` or
   `BCRP_NO_CACHE=1` to skip it.
-- The BCRP API sits behind an anti-bot filter that rejects bursts of requests. `bcrp` retries with a short
-  back-off, and `compare` fetches all its series in a single request; if you script many calls, add a small
+- The BCRP API sits behind an anti-bot filter that rejects bursts of requests. `bcrp` retries (also on network
+  errors and 5xx/429 answers) with a short back-off, and `compare` fetches all its series in a single request; if you script many calls, add a small
   delay between them.
 
 ## License

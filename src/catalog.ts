@@ -208,6 +208,8 @@ const SYNONYMS: Record<string, string> = {
   reference: "referencia",
   monetary: "monetaria",
   banks: "bancarias",
+  core: "subyacente",
+  balance: "balanza",
   prices: "cotizaciones",
   price: "cotizaciones",
 };
@@ -218,8 +220,11 @@ const STOPWORDS = new Set([
   "rate", "rates", "index",
 ]);
 
-/** Headline indicators (the shortcuts) rank above look-alikes when they match. */
-const HEADLINE = new Set(Object.values(SHORTCUTS).map((s) => s.code));
+/**
+ * Headline indicators (the shortcuts) rank above look-alikes when they match; among them, the order of SHORTCUTS
+ * decides (fx first), so "tipo de cambio" finds the dollar before the euro.
+ */
+const HEADLINE = new Map(Object.values(SHORTCUTS).map((s, i, all) => [s.code, 4 + (all.length - i) / 100]));
 
 interface Indexed {
   /** Lowercased, accent-free, punctuation replaced by spaces and padded with spaces: word-prefix matching is ` ${token}`. */
@@ -301,7 +306,7 @@ export function searchCatalog(
     }
     if (!ok) continue;
     if (phrase && (i.name.includes(phrase) || i.category.includes(phrase) || i.group.includes(phrase))) score += 4;
-    if (HEADLINE.has(e.code)) score += 4;
+    score += HEADLINE.get(e.code) ?? 0;
     if (i.endYear >= year - 1) score += 2;
     else if (i.endYear < 2000) score -= 2;
     score -= i.name.length / 200;

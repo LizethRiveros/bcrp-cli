@@ -5,7 +5,7 @@ import pkg from "../package.json";
 import { compareSeries, describeSeries, getLatest, getSeries, searchSeries } from "./api";
 import { OVERS } from "./calc";
 import { FREQUENCIES } from "./dates";
-import { type FxSide, convertCurrency, getChange } from "./insights";
+import { type FxSide, checkThreshold, convertCurrency, getChange, getStats } from "./insights";
 import { SHORTCUTS } from "./shortcuts";
 
 const shortcutList = Object.entries(SHORTCUTS)
@@ -108,16 +108,61 @@ export function createServer(): McpServer {
     "bcrp_convert",
     {
       description:
-        "Convert an amount between US dollars and Peruvian soles using the BCRP interbank exchange rate " +
+        "Convert an amount between Peruvian soles and US dollars or euros using the BCRP interbank exchange rate " +
         "(latest published, or on a given date). A reference rate: banks and exchange houses quote their own.",
       inputSchema: {
         amount: z.number().describe("Amount to convert"),
-        from: z.enum(["usd", "pen"]).describe("Currency of the amount; it is converted into the other one"),
+        from: z.enum(["usd", "eur", "pen"]).describe("Currency of the amount; usd/eur are converted into soles"),
+        to: z.enum(["usd", "eur"]).optional().describe("Target currency when converting from soles (default: usd)"),
         date: z.string().optional().describe("Use the rate of this date (YYYY-MM-DD); default: latest"),
         side: z.enum(["buy", "sell"]).optional().describe("Interbank buy or sell rate (default: sell)"),
       },
     },
-    ({ amount, from, date, side }) => run(() => convertCurrency({ amount, from, date, side: side as FxSide | undefined })),
+    ({ amount, from, to, date, side }) =>
+      run(() => convertCurrency({ amount, from, to, date, side: side as FxSide | undefined })),
+  );
+
+  server.registerTool(
+    "bcrp_stats",
+    {
+      description:
+        "Summary statistics of a BCRP series over a range: observations, first/last, net change, min and max (with " +
+        "their periods), mean, median and standard deviation. Use it instead of pulling every point just to " +
+        "summarize a trend. Without a range, covers a recent default window.",
+      inputSchema: {
+        series: seriesParam,
+        from: z.string().optional().describe("Start date"),
+        to: z.string().optional().describe("End date (default: today)"),
+        last: z.number().int().min(1).max(5000).optional().describe("Use only the last N observations"),
+      },
+    },
+    ({ series, from, to, last }) => run(() => getStats({ series, from, to, last })),
+  );
+
+  server.registerTool(
+    "bcrp_check",
+    {
+      description:
+        "Test the latest published value of a BCRP series against a threshold. Returns whether it is above/below " +
+        "it, with the value and its period.",
+      inputSchema: {
+        series: seriesParam,
+        above: z.number().optional().describe("Triggered when the latest value is greater than this"),
+        below: z.number().optional().describe("Triggered when the latest value is lower than this"),
+      },
+    },
+    ({ series, above, below }) => run(() => checkThreshold(series, { above, below })),
+  );
+
+  server.registerTool(
+    "bcrp_shortcuts",
+    {
+      description:
+        "List the headline-indicator shortcuts (fx, inflation, rate, ...) with their series codes and aliases. " +
+        "Cheaper than a search when the user asks about a common indicator.",
+      inputSchema: {},
+    },
+    () => run(() => SHORTCUTS),
   );
 
   server.registerTool(

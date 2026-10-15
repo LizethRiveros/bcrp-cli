@@ -1,6 +1,16 @@
-import { type LatestResult, frequencyFor, getLatest, getSeries } from "./api";
+import { type LatestResult, type SeriesQuery, frequencyFor, getLatest, getSeries } from "./api";
 import { BcrpError } from "./client";
-import { type Change, type Currency, type Over, computeChange, convertAmount, isRateLike, shiftBack } from "./calc";
+import {
+  type Change,
+  type Currency,
+  type Over,
+  type Stats,
+  computeChange,
+  computeStats,
+  convertAmount,
+  isRateLike,
+  shiftBack,
+} from "./calc";
 import { type Frequency, dateFromInput } from "./dates";
 import { resolveCode } from "./shortcuts";
 
@@ -50,9 +60,17 @@ export async function getChange(input: string, over?: Over, fetchImpl?: typeof f
   };
 }
 
-/** USD/PEN interbank reference rates (S/ per US$). */
-const FX_SIDES = { sell: "PD04638PD", buy: "PD04637PD" } as const;
-export type FxSide = keyof typeof FX_SIDES;
+/** Interbank reference rates against the sol (S/ per unit of foreign currency), by currency and side. */
+const FX_SERIES = {
+  usd: { sell: "PD04638PD", buy: "PD04637PD" },
+  eur: { sell: "PD04648PD", buy: "PD04647PD" },
+} as const;
+export type FxSide = "buy" | "sell";
+export type ForeignCurrency = keyof typeof FX_SERIES;
+
+export function isForeignCurrency(c: string): c is ForeignCurrency {
+  return c in FX_SERIES;
+}
 
 export interface Conversion {
   amount: number;
@@ -64,16 +82,27 @@ export interface Conversion {
   side: FxSide;
   series: string;
   source?: string;
+  /** The foreign currency the rate is quoted for (S/ per 1 unit of it) */
+  rateCurrency: ForeignCurrency;
 }
 
-/** Converts between USD and PEN with the BCRP interbank rate of today (latest published) or of `date`. */
+/**
+ * Converts between soles and US dollars or euros with the BCRP interbank rate of today (latest published) or of
+ * `date`. A foreign amount is converted to soles; soles go to `to` (default usd). Cross rates (usd -> eur) are refused.
+ */
 export async function convertCurrency(
-  opts: { amount: number; from: Currency; date?: string; side?: FxSide },
+  opts: { amount: number; from: Currency; to?: Currency; date?: string; side?: FxSide },
   fetchImpl?: typeof fetch,
 ): Promise<Conversion> {
   const { amount, from, date, side = "sell" } = opts;
   if (!Number.isFinite(amount)) throw new BcrpError("The amount must be a number");
-  const series = FX_SIDES[side];
+  const to: Currency = from === "pen" ? (opts.to ?? "usd") : "pen";
+  if (from === "pen" && to === "pen") throw new BcrpError("Nothing to convert: from and to are both PEN");
+  if (opts.to !== undefined && opts.to !== to) {
+    throw new BcrpError("Only conversions to or from soles (PEN) are supported, not between foreign currencies");
+  }
+  const rateCurrency = (from === "pen" ? to : from) as ForeignCurrency;
+  const series = FX_SERIES[rateCurrency][side];
 
   let rate: number;
   let ratePeriod: string;
@@ -97,7 +126,8 @@ export async function convertCurrency(
   return {
     amount,
     from,
-    to: from === "usd" ? "pen" : "usd",
+    to,
+    rateCurrency,
     result: convertAmount(amount, from, rate),
     rate,
     ratePeriod,
@@ -139,5 +169,32 @@ export async function checkThreshold(
     op,
     threshold,
     triggered: op === "above" ? l.value > threshold : l.value < threshold,
+  };
+}
+
+export interface StatsResult extends Stats {
+  code: string;
+  name: string;
+  frequency: Frequency;
+  decimals: number;
+  source?: string;
+  from: string;
+  to: string;
+}
+
+/** Summary statistics (min, max, mean, median, deviation, net change) of a series over a range. */
+export async function getStats(q: SeriesQuery, fetchImpl?: typeof fetch): Promise<StatsResult> {
+  const s = await getSeries(q, fetchImpl);
+  const stats = computeStats(s.points, { rateLike: isRateLike(s.name) });
+  if (!stats) throw new BcrpError(`No published observations for ${s.code} (${s.name}) in that range`, s.code);
+  return {
+    ...stats,
+    code: s.code,
+    name: s.name,
+    frequency: s.frequency,
+    decimals: s.decimals,
+    ...(s.source ? { source: s.source } : {}),
+    from: s.from,
+    to: s.to,
   };
 }

@@ -102,3 +102,27 @@ test("checkThreshold requires exactly one condition", async () => {
   await expect(checkThreshold("fx", {}, fakeApi(FX).impl)).rejects.toThrow(/exactly one/);
   await expect(checkThreshold("fx", { above: 1, below: 2 }, fakeApi(FX).impl)).rejects.toThrow(/exactly one/);
 });
+
+test("convertCurrency handles euros and refuses cross rates", async () => {
+  const api = fakeApi([{ name: "02.Oct.26", values: ["4.000"] }]);
+  const eur = await convertCurrency({ amount: 10, from: "eur" }, api.impl);
+  expect(eur).toMatchObject({ from: "eur", to: "pen", result: 40, series: "PD04648PD", rateCurrency: "eur" });
+  const back = await convertCurrency({ amount: 40, from: "pen", to: "eur", side: "buy" }, api.impl);
+  expect(back).toMatchObject({ to: "eur", result: 10, series: "PD04647PD" });
+  const usd = await convertCurrency({ amount: 40, from: "pen" }, api.impl);
+  expect(usd).toMatchObject({ to: "usd", series: "PD04638PD" });
+  await expect(convertCurrency({ amount: 1, from: "usd", to: "eur" }, api.impl)).rejects.toThrow(/soles/);
+  await expect(convertCurrency({ amount: 1, from: "pen", to: "pen" }, api.impl)).rejects.toThrow(/both PEN/);
+});
+
+test("getStats summarizes a range and refuses an empty one", async () => {
+  const { getStats } = await import("./insights");
+  const s = await getStats({ series: "fx", last: 3 }, fakeApi(FX).impl);
+  expect(s.code).toBe("PD04638PD");
+  expect(s.count).toBe(3);
+  expect(s.max.value).toBe(3.5);
+  expect(s.min.value).toBe(3.4);
+  await expect(getStats({ series: "fx" }, fakeApi([{ name: "02.Oct.26", values: ["n.d."] }]).impl)).rejects.toThrow(
+    /No published observations/,
+  );
+});

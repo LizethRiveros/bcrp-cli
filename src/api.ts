@@ -1,7 +1,7 @@
 import { BcrpError, fetchSeries, fetchSeriesSet, type Series } from "./client";
 import { type CatalogEntry, findByCode, loadCatalog, searchCatalog } from "./catalog";
 import { type Frequency, dateFromInput, frequencyFromCode, rangeBack, toApiDate } from "./dates";
-import { SHORTCUTS, resolveCode, shortcutName } from "./shortcuts";
+import { SHORTCUTS, closest, resolveCode, shortcutName, shortcutWords } from "./shortcuts";
 
 /** High-level operations shared by the CLI and the MCP server. */
 
@@ -53,8 +53,10 @@ export function isSeriesInput(input: string): boolean {
 export function frequencyFor(code: string): Frequency {
   const f = frequencyFromCode(code) ?? findByCode(loadCatalog().entries, code)?.frequency;
   if (!f || (!CODE_RE.test(code) && !findByCode(loadCatalog().entries, code))) {
+    const guess = closest(code, shortcutWords());
     throw new BcrpError(
-      `"${code}" is not a known series code or shortcut. Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}. ` +
+      `"${code}" is not a known series code or shortcut${guess ? ` (did you mean "${guess}"?)` : ""}. ` +
+        `Shortcuts: ${Object.keys(SHORTCUTS).join(", ")}. ` +
         "Use `bcrp search <text>` to find a series code.",
       code,
     );

@@ -44,13 +44,28 @@ test("fetchSeries explains non-JSON responses (unknown series)", async () => {
 });
 
 test("fetchSeries surfaces HTTP and network errors", async () => {
-  await expect(fetchSeries("X", "2026-1", "2026-2", respond("", 503))).rejects.toThrow(/503/);
+  await expect(fetchSeries("X", "2026-1", "2026-2", respond("", 503), { delayMs: 0 })).rejects.toThrow(/503/);
+  await expect(fetchSeries("X", "2026-1", "2026-2", respond("", 404), { delayMs: 0 })).rejects.toThrow(/404/);
   const down = (async () => {
     throw new Error("ECONNRESET");
   }) as unknown as typeof fetch;
-  const err = await fetchSeries("X", "2026-1", "2026-2", down).catch((e) => e);
+  const err = await fetchSeries("X", "2026-1", "2026-2", down, { delayMs: 0 }).catch((e) => e);
   expect(err).toBeInstanceOf(BcrpError);
   expect(err.message).toMatch(/ECONNRESET/);
+});
+
+test("fetchSeries retries temporary server errors and network blips, then succeeds", async () => {
+  const ok = JSON.stringify({ config: { title: "T", series: [{ name: "S", dec: "2" }] }, periods: [{ name: "2026", values: ["1"] }] });
+  let calls = 0;
+  const flaky = (async () => {
+    calls++;
+    if (calls === 1) throw new Error("ECONNRESET");
+    if (calls === 2) return new Response("", { status: 503 });
+    return new Response(ok);
+  }) as unknown as typeof fetch;
+  const s = await fetchSeries("X", "2026", "2026", flaky, { delayMs: 0 });
+  expect(calls).toBe(3);
+  expect(s.points).toEqual([{ period: "2026", value: 1 }]);
 });
 
 test("extractJson keeps the leading JSON object and ignores trailing PHP debug HTML", () => {

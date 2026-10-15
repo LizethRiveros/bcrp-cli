@@ -95,6 +95,19 @@ button.copy:hover { background: #cfe7d214; }
 .totals dt { font: 500 1.45rem/1 var(--font-mono); }
 .totals dd { color: var(--muted); font: 400 .68rem/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
 
+/* animated terminal */
+.term { background: var(--code-bg); border: 1px solid var(--border); border-radius: .5rem; max-width: 52rem; }
+.term-bar { display: flex; justify-content: space-between; align-items: center; padding: .6rem .6rem .6rem 1.15rem; border-bottom: 1px solid #cfe7d21f; }
+.term-bar span { color: var(--code-muted); font: 400 .68rem/1 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; }
+button.sound { font: 500 .7rem/1 var(--font-mono); color: var(--code-ink); background: transparent; letter-spacing: .04em; border: 1px solid #cfe7d22e; border-radius: .35rem; padding: .5rem .7rem; cursor: pointer; }
+button.sound:hover { background: #cfe7d214; }
+button.sound[aria-pressed="true"] { border-color: var(--code-ink); }
+#term { color: var(--code-ink); font: 400 .85rem/1.7 var(--font-mono); padding: 1.15rem; min-height: 14rem; white-space: pre-wrap; }
+#term .p { color: var(--code-muted); }
+#term .hl { color: #cfe7d2; }
+#term .m { color: var(--code-muted); }
+#term .cur { display: inline-block; width: .55em; height: 1.05em; background: #cfe7d2; vertical-align: text-bottom; }
+
 /* sections */
 section { border-top: 1px solid var(--border); padding: clamp(3.5rem, 7vw, 6rem) 0; }
 .head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, .58fr); gap: 2rem; align-items: end; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
@@ -170,6 +183,20 @@ footer p { max-width: 62rem; margin-bottom: .5rem; }
   </header>
 
   <main>
+    <section id="video" aria-labelledby="video-h">
+      <div class="head">
+        <div>
+          <p class="eyebrow">En acción</p>
+          <h2 id="video-h">Así de rápido.</h2>
+        </div>
+        <p>La misma salida que imprime la terminal, con los datos de hoy. Activa el sonido si quieres oír el teclado.</p>
+      </div>
+      <div class="term">
+        <div class="term-bar"><span>bcrp</span><button class="sound" type="button" id="sound" aria-pressed="false">Sonido: apagado</button></div>
+        <div id="term" aria-live="off"></div>
+      </div>
+    </section>
+
     <section id="hoy" aria-labelledby="hoy-h">
       <div class="head">
         <div>
@@ -264,6 +291,67 @@ $ bcrp fx | jq .value</pre>
 </div>
 
 <script>
+(function () {
+  var SCENES = {{SCENES}};
+  var term = document.getElementById("term");
+  var soundBtn = document.getElementById("sound");
+  if (!term || !SCENES.length) return;
+  var esc = function (s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); };
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var soundOn = false, ctx = null;
+
+  // A short noise burst plus a low thock, per key: no audio files needed.
+  function click(strong) {
+    if (!soundOn || !ctx) return;
+    var t = ctx.currentTime, len = Math.floor(ctx.sampleRate * (strong ? 0.09 : 0.04));
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (len / 5));
+    var src = ctx.createBufferSource(); src.buffer = buf;
+    var hp = ctx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = strong ? 400 : 1500;
+    var g = ctx.createGain(); g.gain.value = (strong ? 0.5 : 0.28) * (0.7 + Math.random() * 0.5);
+    src.connect(hp); hp.connect(g); g.connect(ctx.destination); src.start(t);
+  }
+
+  soundBtn.addEventListener("click", function () {
+    soundOn = !soundOn;
+    if (soundOn && !ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; } }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    soundBtn.setAttribute("aria-pressed", String(soundOn));
+    soundBtn.textContent = soundOn ? "Sonido: activado" : "Sonido: apagado";
+  });
+
+  function line(text, i) {
+    var cls = i === 0 ? "" : (/^\d{4}|^[\d,.]+ USD/.test(text) ? "hl" : "m");
+    return '<span class="' + cls + '">' + esc(text) + "</span>";
+  }
+  function show(s, typed, lines, cursor) {
+    var html = '<span class="p">$ </span>' + esc(s.cmd.slice(0, typed)) + (cursor ? '<span class="cur"></span>' : "");
+    for (var i = 0; i < lines; i++) html += "\n" + line(s.out[i], i);
+    term.innerHTML = html;
+  }
+
+  var reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var alive = false, running = false;
+  async function loop() {
+    running = true;
+    var n = 0;
+    while (alive) {
+      var s = SCENES[n % SCENES.length]; n++;
+      for (var c = 1; c <= s.cmd.length && alive; c++) { show(s, c, 0, true); click(false); await sleep(55 + Math.random() * 50); }
+      click(true); await sleep(250);
+      for (var l = 1; l <= s.out.length && alive; l++) { show(s, s.cmd.length, l, false); await sleep(70); }
+      await sleep(2400);
+    }
+    running = false;
+  }
+  if (reduced) { var s0 = SCENES[0]; show(s0, s0.cmd.length, s0.out.length, false); }
+  else if ("IntersectionObserver" in window) {
+    new IntersectionObserver(function (es) {
+      alive = es[0].isIntersecting;
+      if (alive && !running) loop();
+    }, { threshold: 0.3 }).observe(term);
+  } else { var s1 = SCENES[0]; show(s1, s1.cmd.length, s1.out.length, false); }
+})();
 (function () {
   var btn = document.getElementById("copy");
   var cmd = document.getElementById("cmd");

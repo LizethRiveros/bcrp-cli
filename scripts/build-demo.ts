@@ -62,6 +62,7 @@ function sparkPoints(values: number[]): string {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const cards: string[] = [];
+const latestBy: Record<string, { name: string; code: string; frequency: string; source?: string; period: string; value: number; decimals: number }> = {};
 let fxValue = 0;
 let latestDate = "";
 
@@ -71,6 +72,7 @@ for (const spec of CARDS) {
   const latest = obs[obs.length - 1];
   if (!latest) throw new Error(`no data for ${spec.key}`);
   if (spec.key === "fx") fxValue = latest.value;
+  latestBy[spec.key] = { name: series.name, code: series.code, frequency: series.frequency, source: series.source, period: latest.period, value: latest.value, decimals: series.decimals };
   if (latest.period > latestDate && /^\d{4}-\d{2}-\d{2}$/.test(latest.period)) latestDate = latest.period;
 
   const change = computeChange(series.points, "1m", { rateLike: isRateLike(series.name) });
@@ -110,10 +112,36 @@ for (const spec of CARDS) {
   await sleep(800); // the BCRP API rejects bursts of requests
 }
 
+/** What the animated terminal types and prints: the same text the CLI prints, from the data fetched above. */
+function sceneFor(key: keyof typeof latestBy | string, command: string): { cmd: string; out: string[] } {
+  const l = latestBy[key]!;
+  return {
+    cmd: command,
+    out: [l.name, `${l.code} · ${l.frequency}`, ...(l.source ? [`Source: ${l.source}`] : []), "", `${l.period}  ${fmtNumber(l.value, l.decimals)}`],
+  };
+}
+const fx = latestBy.fx!;
+const scenes = [
+  sceneFor("fx", "bcrp fx"),
+  sceneFor("euro", "bcrp euro"),
+  {
+    cmd: "bcrp convert 100 usd",
+    out: [
+      `100.00 USD = ${(fxValue * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} PEN`,
+      `Rate: ${fmtNumber(fx.value, 3)} S/ per US$ · interbank sell · ${fx.period}`,
+      `${fx.code} · Source: ${fx.source ?? "BCRP"}`,
+    ],
+  },
+  sceneFor("inflation", "bcrp inflation"),
+];
+// "<" is escaped so no series name can close the <script> block it is embedded in.
+const scenesJson = JSON.stringify(scenes).replace(/</g, "\u003c");
+
 const here = dirname(fileURLToPath(import.meta.url));
 const template = readFileSync(join(here, "demo.template.html"), "utf8");
 const html = template
   .replace("{{CARDS}}", cards.join("\n"))
+  .replace("{{SCENES}}", () => scenesJson)
   .replace("{{UPDATED}}", formatPeriod(latestDate || new Date().toISOString().slice(0, 10)))
   .replace("{{CONVERT}}", (fxValue * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
 

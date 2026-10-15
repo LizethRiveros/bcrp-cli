@@ -7,162 +7,224 @@
 <meta name="description" content="CLI y servidor MCP para los datos oficiales del BCRP: dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series. Gratis y de código abierto.">
 <meta property="og:title" content="bcrp: datos del Banco Central del Perú">
 <meta property="og:description" content="Dólar, inflación, tasa de referencia y 17.000 series oficiales del BCRP, en tu terminal y en tu IA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+/* Same palette and type as crafter.ing: Geist, near-black green, hairlines, mono labels. */
 :root {
-  --bg: #fbfaf7;
-  --surface: #ffffff;
-  --text: #1b1b18;
-  --muted: #5c5b55;
-  --border: #e4e1d8;
-  --accent: #c8102e;
-  --code-bg: #14140f;
-  --code-ink: #e8e6dc;
-  --code-muted: #8f8d80;
+  --bg: #f6fbf8;
+  --text: #07100d;
+  --muted: #617369;
+  --muted-strong: #34463c;
+  --accent: #24523f;
+  --border: #173f3129;
+  --surface: #ffffffb8;
+  --code-bg: #07100d;
+  --code-ink: #eef4ec;
+  --code-muted: #8da093;
+  --font-sans: "Geist", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12120f;
-    --surface: #1b1b17;
-    --text: #f1efe6;
-    --muted: #a8a69a;
-    --border: #2f2e28;
-    --accent: #ff6b7d;
-    --code-bg: #0a0a08;
-    --code-ink: #e8e6dc;
-    --code-muted: #8f8d80;
+    --bg: #07100d;
+    --text: #eef4ec;
+    --muted: #8da093;
+    --muted-strong: #bac9bd;
+    --accent: #cfe7d2;
+    --border: #cfe7d22e;
+    --surface: #11211ac7;
+    --code-bg: #0f1c17;
+    --code-ink: #eef4ec;
+    --code-muted: #8da093;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12120f;
-  --surface: #1b1b17;
-  --text: #f1efe6;
-  --muted: #a8a69a;
-  --border: #2f2e28;
-  --accent: #ff6b7d;
-  --code-bg: #0a0a08;
-  --code-ink: #e8e6dc;
-  --code-muted: #8f8d80;
+  --bg: #07100d; --text: #eef4ec; --muted: #8da093; --muted-strong: #bac9bd; --accent: #cfe7d2;
+  --border: #cfe7d22e; --surface: #11211ac7; --code-bg: #0f1c17; --code-ink: #eef4ec; --code-muted: #8da093;
   color-scheme: dark;
 }
-* { box-sizing: border-box; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0;
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 16px/1.6 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
-a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.wrap { max-width: 1040px; margin: 0 auto; padding: 0 16px; }
-header.hero { padding: 56px 0 40px; }
-.brand { font: 600 15px/1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); letter-spacing: .02em; }
-h1 { font-size: clamp(30px, 6vw, 48px); line-height: 1.1; margin: 14px 0 14px; letter-spacing: -.02em; max-width: 18ch; }
-.lead { font-size: 18px; color: var(--muted); max-width: 58ch; margin: 0 0 24px; }
+a { color: inherit; text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 4px; transition: text-decoration-color .15s; }
+a:hover { text-decoration-color: var(--accent); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+code { font-family: var(--font-mono); font-size: .9em; }
+.wrap { max-width: 84rem; margin: 0 auto; padding: 0 1.25rem; }
+.eyebrow {
+  font: 500 .68rem/1 var(--font-mono);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* top bar */
+.bar { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 0; border-bottom: 1px solid var(--border); }
+.bar nav { display: flex; gap: 1.5rem; font-size: .875rem; color: var(--muted-strong); }
+.bar nav a { text-decoration: none; }
+.bar nav a:hover { color: var(--text); }
+.logo { font: 600 .95rem/1 var(--font-mono); letter-spacing: -.01em; text-decoration: none; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(16rem, .7fr); gap: clamp(2rem, 7vw, 7rem); align-items: end; padding: clamp(4rem, 11vw, 9rem) 0 clamp(3rem, 6vw, 5rem); }
+h1 { font-size: clamp(2.6rem, 6.2vw, 5.6rem); font-weight: 470; letter-spacing: -.055em; line-height: .96; margin-top: 1.25rem; max-width: 12ch; text-wrap: balance; }
+.lead { color: var(--muted-strong); font-size: clamp(1rem, 1.4vw, 1.2rem); line-height: 1.7; margin-top: 1.6rem; max-width: 40rem; }
 .install {
-  display: flex; align-items: center; gap: 8px; max-width: 560px;
-  background: var(--code-bg); color: var(--code-ink); border-radius: 10px; padding: 6px 6px 6px 16px;
+  display: flex; align-items: center; gap: .5rem; margin-top: 2rem; max-width: 34rem;
+  background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--border); border-radius: .5rem; padding: .35rem .35rem .35rem 1rem;
 }
-.install code { flex: 1; font: 14px/1.4 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto; white-space: nowrap; padding: 8px 0; }
+.install code { flex: 1; font-size: .85rem; overflow-x: auto; white-space: nowrap; padding: .5rem 0; }
 .install code::before { content: "$ "; color: var(--code-muted); }
 button.copy {
-  font: 600 13px/1 system-ui, sans-serif; color: var(--code-ink); background: transparent;
-  border: 1px solid #4a493f; border-radius: 7px; padding: 9px 12px; cursor: pointer; min-width: 74px;
+  font: 500 .75rem/1 var(--font-mono); color: var(--code-ink); background: transparent; letter-spacing: .04em;
+  border: 1px solid #cfe7d22e; border-radius: .35rem; padding: .6rem .8rem; cursor: pointer; min-width: 5rem; transition: background .15s;
 }
-button.copy:hover { background: #26251f; }
-.by { margin: 14px 0 0; font-size: 14px; color: var(--muted); }
-.links { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 15px; }
-section { padding: 32px 0; }
-h2 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.01em; }
-.sub { color: var(--muted); margin: 0 0 20px; }
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(236px, 1fr)); gap: 12px; }
-.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
-.card h3 { margin: 0; font-size: 14px; font-weight: 600; }
-.card .what { margin: 0; font-size: 12.5px; color: var(--muted); }
-.value { font: 600 32px/1.1 ui-monospace, "SF Mono", Menlo, Consolas, monospace; letter-spacing: -.02em; margin-top: 8px; }
-.when { font-size: 12.5px; color: var(--muted); }
-.delta { font-size: 13px; margin-top: 2px; }
-svg.spark { width: 100%; height: 36px; margin-top: 8px; display: block; }
-svg.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.src { margin-top: auto; padding-top: 8px; font-size: 11.5px; color: var(--muted); }
-.note { font-size: 13px; color: var(--muted); margin-top: 14px; }
-.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
-.feature { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
-.feature h3 { margin: 0 0 4px; font-size: 16px; }
-.feature p { margin: 0 0 12px; color: var(--muted); font-size: 14.5px; }
+button.copy:hover { background: #cfe7d214; }
+.by { color: var(--muted); font: 400 .72rem/1.5 var(--font-mono); margin-top: 1rem; }
+.totals { border-top: 1px solid var(--border); }
+.totals div { display: grid; grid-template-columns: 6rem 1fr; gap: 1rem; align-items: baseline; padding: .9rem 0; border-bottom: 1px solid var(--border); }
+.totals dt { font: 500 1.45rem/1 var(--font-mono); }
+.totals dd { color: var(--muted); font: 400 .68rem/1.4 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; }
+
+/* sections */
+section { border-top: 1px solid var(--border); padding: clamp(3.5rem, 7vw, 6rem) 0; }
+.head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(16rem, .58fr); gap: 2rem; align-items: end; margin-bottom: clamp(2rem, 4vw, 3.5rem); }
+h2 { font-size: clamp(1.8rem, 3.6vw, 3rem); font-weight: 470; letter-spacing: -.045em; line-height: 1; margin-top: .9rem; }
+.head p { color: var(--muted-strong); font-size: .95rem; line-height: 1.7; }
+
+/* indicators: a ledger, not cards */
+.ledger { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
+.cell { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1.25rem 1.25rem 1rem; display: flex; flex-direction: column; gap: .35rem; min-height: 15rem; }
+.cell h3 { font: 500 .68rem/1.3 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.cell .what { color: var(--muted); font-size: .78rem; line-height: 1.45; min-height: 2.3em; }
+.value { font: 500 clamp(1.5rem, 2.4vw, 2.1rem)/1.1 var(--font-mono); letter-spacing: -.04em; margin-top: .9rem; }
+.when { color: var(--muted); font: 400 .72rem/1.4 var(--font-mono); }
+.delta { font: 400 .75rem/1.4 var(--font-mono); color: var(--muted-strong); }
+svg.spark { width: 100%; height: 2rem; margin-top: .5rem; }
+svg.spark polyline { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.src { margin-top: auto; padding-top: .6rem; color: var(--muted); font: 400 .65rem/1.4 var(--font-mono); }
+.note { color: var(--muted); font: 400 .72rem/1.6 var(--font-mono); margin-top: 1rem; max-width: 60rem; }
+
+/* features */
+.rows { border-top: 1px solid var(--border); }
+.row { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(1.5rem, 5vw, 5rem); padding: 2rem 0; border-bottom: 1px solid var(--border); }
+.row h3 { font-size: 1.15rem; font-weight: 500; letter-spacing: -.02em; }
+.row p { color: var(--muted-strong); font-size: .92rem; line-height: 1.7; margin-top: .5rem; max-width: 30rem; }
 pre {
-  margin: 0; background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 12px 14px;
-  font: 13px/1.55 ui-monospace, "SF Mono", Menlo, Consolas, monospace; overflow-x: auto;
+  background: var(--code-bg); color: var(--code-ink); border: 1px solid var(--border); border-radius: .5rem;
+  padding: 1rem 1.15rem; font: 400 .8rem/1.7 var(--font-mono); overflow-x: auto;
 }
 pre .c { color: var(--code-muted); }
-footer { border-top: 1px solid var(--border); margin-top: 24px; padding: 24px 0 48px; color: var(--muted); font-size: 13.5px; }
-footer p { margin: 0 0 6px; max-width: 70ch; }
-@media (max-width: 520px) { header.hero { padding-top: 40px; } .value { font-size: 28px; } }
+
+footer { border-top: 1px solid var(--border); padding: 2.5rem 0 4rem; color: var(--muted); font: 400 .72rem/1.7 var(--font-mono); }
+footer p { max-width: 62rem; margin-bottom: .5rem; }
+
+@media (max-width: 900px) {
+  .hero, .head, .row { grid-template-columns: 1fr; }
+  .ledger { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .bar nav a:not(:last-child) { display: none; }
+  .ledger { grid-template-columns: 1fr; }
+  .cell { min-height: 0; }
+}
 </style>
 </head>
 <body>
-<header class="hero">
-  <div class="wrap">
-    <div class="brand">bcrp</div>
-    <h1>Los datos del Banco Central del Perú, en tu terminal y en tu IA.</h1>
-    <p class="lead">Dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series oficiales del BCRP. Busca por nombre, compara, mide variaciones y conviértelo todo con un comando. Gratis y de código abierto.</p>
-    <div class="install">
-      <code id="cmd">npx @lizethriveros/bcrp-cli fx</code>
-      <button class="copy" type="button" id="copy" aria-label="Copiar el comando">Copiar</button>
-    </div>
-    <div class="links">
+<div class="wrap">
+  <div class="bar">
+    <a class="logo" href="#">bcrp</a>
+    <nav>
+      <a href="#hoy">Hoy</a>
+      <a href="#hacer">Comandos</a>
+      <a href="#ia">IA</a>
       <a href="https://github.com/LizethRiveros/bcrp-cli">GitHub</a>
-      <a href="https://www.npmjs.com/package/@lizethriveros/bcrp-cli">npm</a>
-      <a href="#ia">Conéctalo a tu IA</a>
-    </div>
-    <p class="by">Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a>.</p>
+    </nav>
   </div>
-</header>
 
-<main class="wrap">
-  <section aria-labelledby="hoy">
-    <h2 id="hoy">El Perú hoy</h2>
-    <p class="sub">Último dato publicado de cada indicador. Instantánea del 6 oct 2026.</p>
-    <div class="cards">
-      <article class="card">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">CLI · MCP · Datos oficiales del BCRP</p>
+      <h1>El Banco Central, en tu terminal y en tu IA.</h1>
+      <p class="lead">Dólar, inflación, tasa de referencia, reservas, PBI y más de 17.000 series oficiales. Busca por nombre, compara, mide variaciones y convierte con un comando. Gratis y de código abierto.</p>
+      <div class="install">
+        <code id="cmd">npx @lizethriveros/bcrp-cli fx</code>
+        <button class="copy" type="button" id="copy" aria-label="Copiar el comando">Copiar</button>
+      </div>
+      <p class="by">Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a> · <a href="https://www.npmjs.com/package/@lizethriveros/bcrp-cli">npm</a></p>
+    </div>
+    <dl class="totals">
+      <div><dt>17k+</dt><dd>series oficiales</dd></div>
+      <div><dt>10</dt><dd>herramientas MCP</dd></div>
+      <div><dt>0</dt><dd>claves de API</dd></div>
+    </dl>
+  </header>
+
+  <main>
+    <section id="hoy" aria-labelledby="hoy-h">
+      <div class="head">
+        <div>
+          <p class="eyebrow">El Perú hoy</p>
+          <h2 id="hoy-h">Último dato publicado.</h2>
+        </div>
+        <p>Instantánea del 14 oct 2026, obtenida con el propio <code>bcrp</code>. Cada indicador muestra su periodo y su fuente.</p>
+      </div>
+      <div class="ledger">
+      <article class="cell">
         <h3>Dólar</h3>
         <p class="what">Tipo de cambio interbancario venta (S/ por US$)</p>
-        <div class="value">S/ 3.427</div>
-        <div class="when">5 oct 2026</div>
-        <div class="delta">▲ +1.83% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,28.00 3.45,27.83 6.90,27.86 10.34,25.62 13.79,23.63 17.24,22.94 20.69,24.87 24.14,24.23 27.59,23.04 31.03,24.24 34.48,25.38 37.93,24.77 41.38,21.58 44.83,22.53 48.28,19.37 51.72,20.52 55.17,22.73 58.62,23.45 62.07,24.69 65.52,25.48 68.97,24.18 72.41,17.72 75.86,13.49 79.31,10.07 82.76,5.53 86.21,4.07 89.66,7.20 93.10,2.00 96.55,5.74 100.00,8.36"/></svg>
+        <div class="value">S/ 3.438</div>
+        <div class="when">13 oct 2026</div>
+        <div class="delta">▲ +2.09% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,25.18 3.45,27.32 6.90,26.61 10.34,25.29 13.79,26.63 17.24,27.89 20.69,27.21 24.14,23.67 27.59,24.73 31.03,21.23 34.48,22.51 37.93,24.95 41.38,25.74 44.83,27.12 48.28,28.00 51.72,26.55 55.17,19.40 58.62,14.72 62.07,10.94 65.52,5.91 68.97,4.30 72.41,7.76 75.86,2.00 79.31,6.14 82.76,9.04 86.21,7.04 89.66,3.07 93.10,2.00 96.55,5.93 100.00,6.21"/></svg>
         <div class="src">Fuente: SBS, Reuters, Datatec, BCRP · <code>PD04638PD</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
+        <h3>Euro</h3>
+        <p class="what">Tipo de cambio interbancario venta (S/ por euro)</p>
+        <div class="value">S/ 3.867</div>
+        <div class="when">13 oct 2026</div>
+        <div class="delta">▼ -1.23% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,20.67 3.45,17.66 6.90,21.68 10.34,20.57 13.79,22.18 17.24,21.37 20.69,18.97 24.14,3.81 27.59,21.58 31.03,2.00 34.48,24.29 37.93,22.98 41.38,7.62 44.83,25.39 48.28,17.86 51.72,26.80 55.17,18.26 58.62,24.79 62.07,7.72 65.52,7.72 68.97,22.58 72.41,2.20 75.86,3.61 79.31,4.31 82.76,12.94 86.21,25.19 89.66,7.92 93.10,28.00 96.55,26.39 100.00,26.39"/></svg>
+        <div class="src">Fuente: SBS, Reuters, Datatec, BCRP · <code>PD04648PD</code></div>
+      </article>
+      <article class="cell">
         <h3>Inflación</h3>
         <p class="what">Variación en 12 meses, Lima Metropolitana</p>
-        <div class="value">4.44%</div>
-        <div class="when">ago 2026</div>
-        <div class="delta">▲ +0.37 pts en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,12.87 3.45,17.73 6.90,20.99 10.34,18.80 13.79,20.03 17.24,20.76 20.69,22.78 24.14,20.95 27.59,18.90 31.03,21.29 34.48,22.18 37.93,25.10 41.38,26.67 44.83,23.74 48.28,23.47 51.72,23.42 55.17,23.45 58.62,28.00 62.07,26.03 65.52,26.08 68.97,25.95 72.41,24.86 75.86,23.36 79.31,19.35 82.76,6.94 86.21,5.31 89.66,6.16 93.10,5.35 96.55,4.91 100.00,2.00"/></svg>
+        <div class="value">4.55%</div>
+        <div class="when">sep 2026</div>
+        <div class="delta">▲ +0.11 pts en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,18.06 3.45,21.21 6.90,19.09 10.34,20.29 13.79,20.99 17.24,22.95 20.69,21.18 24.14,19.20 27.59,21.50 31.03,22.37 34.48,25.20 37.93,26.71 41.38,23.88 44.83,23.62 48.28,23.56 51.72,23.60 55.17,28.00 58.62,26.10 62.07,26.15 65.52,26.02 68.97,24.96 72.41,23.51 75.86,19.63 79.31,7.62 82.76,6.04 86.21,6.86 89.66,6.08 93.10,5.65 96.55,2.84 100.00,2.00"/></svg>
         <div class="src">Fuente: INEI · <code>PN01273PM</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
         <h3>Tasa de referencia</h3>
         <p class="what">Política monetaria del BCRP</p>
         <div class="value">4.25%</div>
-        <div class="when">6 oct 2026</div>
+        <div class="when">14 oct 2026</div>
         <div class="delta">— 0.00 pts en 1 mes</div>
         <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,15.00 3.45,15.00 6.90,15.00 10.34,15.00 13.79,15.00 17.24,15.00 20.69,15.00 24.14,15.00 27.59,15.00 31.03,15.00 34.48,15.00 37.93,15.00 41.38,15.00 44.83,15.00 48.28,15.00 51.72,15.00 55.17,15.00 58.62,15.00 62.07,15.00 65.52,15.00 68.97,15.00 72.41,15.00 75.86,15.00 79.31,15.00 82.76,15.00 86.21,15.00 89.66,15.00 93.10,15.00 96.55,15.00 100.00,15.00"/></svg>
         <div class="src">Fuente: BCRP, Ministerio de Economía y Finanzas · <code>PD12301MD</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
         <h3>Reservas internacionales</h3>
         <p class="what">Netas, millones de US$</p>
-        <div class="value">US$ 95,746</div>
-        <div class="when">5 oct 2026</div>
-        <div class="delta">▼ -2.54% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.00 3.45,2.27 6.90,6.43 10.34,12.39 13.79,12.60 17.24,3.91 20.69,4.96 24.14,4.69 27.59,6.49 31.03,6.53 34.48,7.15 37.93,5.96 41.38,7.59 44.83,6.90 48.28,8.05 51.72,8.46 55.17,10.05 58.62,8.74 62.07,9.98 65.52,10.71 68.97,11.08 72.41,10.81 75.86,12.09 79.31,12.38 82.76,17.49 86.21,26.03 89.66,28.00 93.10,15.64 96.55,14.84 100.00,15.34"/></svg>
+        <div class="value">US$ 96,469</div>
+        <div class="when">13 oct 2026</div>
+        <div class="delta">▼ -1.69% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.00 3.45,3.13 6.90,2.84 10.34,4.78 13.79,4.83 17.24,5.49 20.69,4.21 24.14,5.97 27.59,5.23 31.03,6.47 34.48,6.91 37.93,8.62 41.38,7.21 44.83,8.54 48.28,9.34 51.72,9.74 55.17,9.45 58.62,10.83 62.07,11.14 65.52,16.66 68.97,25.87 72.41,28.00 75.86,14.66 79.31,13.79 82.76,14.34 86.21,13.18 89.66,13.17 93.10,12.44 96.55,12.58 100.00,11.57"/></svg>
         <div class="src">Fuente: BCRP · <code>PD04650MD</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
         <h3>PBI</h3>
         <p class="what">Variación interanual</p>
         <div class="value">3.6%</div>
@@ -171,77 +233,82 @@ footer p { margin: 0 0 6px; max-width: 70ch; }
         <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,12.82 3.45,28.00 6.90,2.75 10.34,2.00 13.79,24.68 17.24,5.61 20.69,9.38 24.14,11.42 27.59,9.97 31.03,7.63 34.48,4.72 37.93,7.54 41.38,14.22 44.83,5.96 48.28,20.73 51.72,17.66 55.17,5.26 58.62,11.17 62.07,12.80 65.52,7.59 68.97,8.51 72.41,19.50 75.86,8.66 79.31,10.29 82.76,10.61 86.21,12.37 89.66,10.07 93.10,17.01 96.55,18.81 100.00,11.13"/></svg>
         <div class="src">Fuente: INEI, Ministerio de Agricultura, Ministerio de Energía y Minas, Ministerio de la Producción · <code>PN01728AM</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
         <h3>Cobre</h3>
         <p class="what">Londres, ¢US$ por libra</p>
-        <div class="value">651.13</div>
-        <div class="when">2 oct 2026</div>
-        <div class="delta">— 0.00% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,17.64 3.45,14.84 6.90,11.39 10.34,12.60 13.79,11.05 17.24,11.05 20.69,15.86 24.14,17.26 27.59,17.12 31.03,16.71 34.48,10.87 37.93,4.07 41.38,6.32 44.83,16.05 48.28,21.28 51.72,28.00 55.17,27.97 58.62,21.68 62.07,15.69 65.52,11.25 68.97,2.31 72.41,2.00 75.86,4.14 79.31,3.10 82.76,3.97 86.21,10.72 89.66,13.14 93.10,12.70 96.55,17.95 100.00,17.26"/></svg>
+        <div class="value">668.64</div>
+        <div class="when">13 oct 2026</div>
+        <div class="delta">▲ +3.53% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,17.61 3.45,17.47 6.90,17.07 10.34,11.42 13.79,4.84 17.24,7.01 20.69,16.44 24.14,21.50 27.59,28.00 31.03,27.97 34.48,21.88 37.93,16.09 41.38,11.79 44.83,3.14 48.28,2.84 51.72,4.91 55.17,3.90 58.62,4.74 62.07,11.27 65.52,13.61 68.97,13.20 72.41,18.28 75.86,17.61 79.31,15.10 82.76,12.59 86.21,12.43 89.66,11.89 93.10,6.44 96.55,2.00 100.00,4.71"/></svg>
         <div class="src">Fuente: Reuters · <code>PD04701XD</code></div>
       </article>
-      <article class="card">
+      <article class="cell">
         <h3>Oro</h3>
         <p class="what">Londres, US$ por onza troy</p>
-        <div class="value">US$ 4,141.19</div>
-        <div class="when">2 oct 2026</div>
-        <div class="delta">▼ -5.49% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.24 3.45,2.00 6.90,5.17 10.34,4.79 13.79,11.70 17.24,12.55 20.69,17.77 24.14,15.23 27.59,10.85 31.03,12.91 34.48,14.14 37.93,16.46 41.38,14.41 44.83,18.28 48.28,16.79 51.72,19.17 55.17,19.53 58.62,20.90 62.07,17.15 65.52,15.38 68.97,17.07 72.41,16.24 75.86,19.74 79.31,20.35 82.76,19.88 86.21,28.00 89.66,24.80 93.10,26.00 96.55,25.03 100.00,26.78"/></svg>
+        <div class="value">US$ 4,160.74</div>
+        <div class="when">13 oct 2026</div>
+        <div class="delta">▼ -4.33% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,8.56 3.45,2.00 6.90,5.09 10.34,6.93 13.79,10.41 17.24,7.33 20.69,13.12 24.14,10.90 27.59,14.46 31.03,14.99 34.48,17.04 37.93,11.43 41.38,8.78 44.83,11.31 48.28,10.07 51.72,15.32 55.17,16.23 58.62,15.52 62.07,27.68 65.52,22.89 68.97,24.68 72.41,23.22 75.86,25.85 79.31,25.97 82.76,24.19 86.21,28.00 89.66,26.47 93.10,22.03 96.55,23.62 100.00,24.44"/></svg>
         <div class="src">Fuente: Reuters · <code>PD04704XD</code></div>
       </article>
-    </div>
-    <p class="note">Los datos mensuales se publican con semanas de rezago: cada tarjeta indica su periodo. Las variaciones se calculan con <code>bcrp change</code>.</p>
-  </section>
+      </div>
+      <p class="note">Los datos mensuales se publican con semanas de rezago. Las variaciones se calculan con <code>bcrp change</code>.</p>
+    </section>
 
-  <section aria-labelledby="hacer">
-    <h2 id="hacer">Qué puedes hacer</h2>
-    <p class="sub">Todo funciona igual en la terminal, en scripts (JSON y CSV) y desde una IA.</p>
-    <div class="features">
-      <div class="feature">
-        <h3>Encontrar cualquier serie</h3>
-        <p>El BCRP usa códigos como <code>PD04638PD</code>. Aquí buscas por nombre, en español o inglés.</p>
+    <section id="hacer" aria-labelledby="hacer-h">
+      <div class="head">
+        <div>
+          <p class="eyebrow">Comandos</p>
+          <h2 id="hacer-h">Un comando, un dato.</h2>
+        </div>
+        <p>Funciona igual en la terminal, en scripts (JSON y CSV) y desde una IA.</p>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div><h3>Encontrar cualquier serie</h3><p>El BCRP usa códigos como <code>PD04638PD</code>. Aquí buscas por nombre, en español o inglés.</p></div>
 <pre>$ bcrp search "tasa de referencia"
 PD04722MM  monthly  Tasa de Referencia…
 PD12301MD  daily    Tasa de Referencia…</pre>
-      </div>
-      <div class="feature">
-        <h3>Medir y comparar</h3>
-        <p>Cuánto se movió algo, o varias series lado a lado.</p>
+        </div>
+        <div class="row">
+          <div><h3>Medir y resumir</h3><p>Cuánto se movió algo, qué rango tuvo, o varias series lado a lado.</p></div>
 <pre>$ bcrp change fx --over ytd
 Over ytd: 3.364 → 3.427
 Change:   +0.064 (+1.89%)
 
+$ bcrp stats inflation --last 12
 $ bcrp compare inflation gdp --last 4</pre>
-      </div>
-      <div class="feature">
-        <h3>Convertir y avisar</h3>
-        <p>Dólares a soles con el tipo de cambio oficial, y alertas para tus scripts.</p>
+        </div>
+        <div class="row">
+          <div><h3>Convertir y avisar</h3><p>Dólares y euros a soles con el tipo de cambio oficial, y alertas para tus scripts.</p></div>
 <pre>$ bcrp convert 100 usd
-100.00 USD = 342.71 PEN
+100.00 USD = 343.79 PEN
 
 $ bcrp check fx --above 3.50 &amp;&amp; notify</pre>
-      </div>
-      <div class="feature">
-        <h3>Exportar</h3>
-        <p>JSON automático al encadenar comandos, y CSV para abrir en Excel.</p>
+        </div>
+        <div class="row">
+          <div><h3>Exportar</h3><p>JSON automático al encadenar comandos, y CSV para abrir en Excel.</p></div>
 <pre>$ bcrp get fx --from 2026-01 --csv &gt; fx.csv
 $ bcrp fx | jq .value</pre>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section id="ia" aria-labelledby="ia-h">
-    <h2 id="ia-h">Conéctalo a tu IA</h2>
-    <p class="sub">Las IA no conocen el dólar de hoy. Con el servidor MCP, tu asistente consulta la cifra oficial y te responde con su fuente.</p>
-    <div class="features">
-      <div class="feature">
-        <h3>Claude Code</h3>
-        <p>Una línea:</p>
-<pre>claude mcp add bcrp -- npx -y @lizethriveros/bcrp-cli mcp</pre>
+    <section id="ia" aria-labelledby="ia-h">
+      <div class="head">
+        <div>
+          <p class="eyebrow">MCP</p>
+          <h2 id="ia-h">Conéctalo a tu IA.</h2>
+        </div>
+        <p>Las IA no conocen el dólar de hoy. Con el servidor MCP tu asistente consulta la cifra oficial y responde con su fuente.</p>
       </div>
-      <div class="feature">
-        <h3>Otros clientes MCP</h3>
-        <p>Siete herramientas: buscar, último valor, historial, comparar, variación, conversión e info.</p>
+      <div class="rows">
+        <div class="row">
+          <div><h3>Claude Code</h3><p>Una línea.</p></div>
+<pre>claude mcp add bcrp -- npx -y @lizethriveros/bcrp-cli mcp</pre>
+        </div>
+        <div class="row">
+          <div><h3>Otros clientes MCP</h3><p>Diez herramientas: buscar, último valor, historial, comparar, variación, estadísticas, conversión, alertas, atajos e info.</p></div>
 <pre>{
   "mcpServers": {
     "bcrp": {
@@ -250,24 +317,22 @@ $ bcrp fx | jq .value</pre>
     }
   }
 }</pre>
-      </div>
-      <div class="feature">
-        <h3>Skill para agentes</h3>
-        <p>Enseña a tu asistente cuándo usarlo y qué errores evitar (rezago, frecuencias, tasas).</p>
+        </div>
+        <div class="row">
+          <div><h3>Skill para agentes</h3><p>Enseña a tu asistente cuándo usarlo y qué errores evitar: rezago, frecuencias, tasas.</p></div>
 <pre>bcrp skill install
 <span class="c"># la copia en ~/.claude/skills/bcrp</span></pre>
+        </div>
       </div>
-    </div>
-  </section>
-</main>
+    </section>
+  </main>
 
-<footer>
-  <div class="wrap">
+  <footer>
     <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a> y cada serie indica su fuente.</p>
     <p>El tipo de cambio es una referencia interbancaria: bancos y casas de cambio publican el suyo. Código abierto bajo licencia MIT.</p>
     <p>Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a>.</p>
-  </div>
-</footer>
+  </footer>
+</div>
 
 <script>
 (function () {
@@ -275,13 +340,12 @@ $ bcrp fx | jq .value</pre>
   var cmd = document.getElementById("cmd");
   if (!btn || !cmd) return;
   btn.addEventListener("click", function () {
-    var text = cmd.textContent;
     var done = function () {
       btn.textContent = "Copiado";
       setTimeout(function () { btn.textContent = "Copiar"; }, 1600);
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, function () {});
+      navigator.clipboard.writeText(cmd.textContent).then(done, function () {});
     }
   });
 })();

@@ -23,6 +23,7 @@ interface CardSpec {
 
 const CARDS: CardSpec[] = [
   { key: "fx", label: "Dólar", what: "Tipo de cambio interbancario venta (S/ por US$)", prefix: "S/ " },
+  { key: "euro", label: "Euro", what: "Tipo de cambio interbancario venta (S/ por euro)", prefix: "S/ " },
   { key: "inflation", label: "Inflación", what: "Variación en 12 meses, Lima Metropolitana", suffix: "%" },
   { key: "rate", label: "Tasa de referencia", what: "Política monetaria del BCRP", suffix: "%" },
   { key: "reserves", label: "Reservas internacionales", what: "Netas, millones de US$", prefix: "US$ " },
@@ -94,7 +95,7 @@ for (const spec of CARDS) {
   const display = `${spec.prefix ?? ""}${fmtNumber(latest.value, series.decimals)}${spec.suffix ?? ""}`;
   cards.push(
     [
-      `      <article class="card">`,
+      `      <article class="cell">`,
       `        <h3>${escapeHtml(spec.label)}</h3>`,
       `        <p class="what">${escapeHtml(spec.what)}</p>`,
       `        <div class="value">${escapeHtml(display)}</div>`,

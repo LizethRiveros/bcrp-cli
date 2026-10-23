@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pregúntale al Banco Central</title>
-<meta name="description" content="Pregunta por el dólar, la inflación, la tasa de interés y más. Te mostramos el dato oficial del Banco Central de Reserva del Perú, su fecha y su fuente.">
-<meta property="og:title" content="Pregúntale al Banco Central">
+<title>Pregúntale al BCRP</title>
+<meta name="description" content="Pregunta por el dólar, la inflación, la tasa de interés y más. Te mostramos el dato oficial del BCRP, su fecha y su fuente.">
+<meta property="og:title" content="Pregúntale al BCRP">
 <meta property="og:description" content="El dato oficial del BCRP, con su fecha y su fuente, sin tecnicismos.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -128,6 +128,10 @@ svg.chart .area { fill: var(--accent); opacity: .1; } svg.chart .dot { fill: var
 svg.chart .grid { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
 svg.chart text { fill: var(--muted-foreground); font: 400 10.5px var(--mono); }
 .source { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .2rem .9rem; font: 400 10.5px/1.6 var(--mono); letter-spacing: -.01em; color: var(--muted-foreground); }
+.bridge { margin-top: 1.25rem; padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; background: oklch(.5 0 0 / .05); }
+.bridge > div { flex: 1 1 12rem; } .bridge p:last-child { font-size: .85rem; color: var(--muted-foreground); }
+.bridge code { flex: 1 1 100%; order: 3; font: 400 .8rem/1.4 var(--mono); padding: .6rem .8rem; border-radius: .6rem; background: oklch(0.15 0.012 150); color: oklch(0.97 0.005 100); overflow-x: auto; white-space: nowrap; }
+.bridge code::before { content: "$ "; opacity: .55; }
 .empty p { margin-top: .6rem; font-size: .95rem; color: var(--muted-foreground); }
 
 /* calculator */
@@ -166,9 +170,9 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
 
 <main>
   <div class="hero rise">
-    <p class="eyebrow">Datos oficiales del Banco Central</p>
-    <h1>Pregunta. Te mostramos el <em>dato oficial</em>.</h1>
-    <p class="lead">Escribe tu pregunta o elige una. Cada respuesta trae el dato del Banco Central de Reserva del Perú, de qué fecha es y dónde verificarlo.</p>
+    <p class="eyebrow">Datos oficiales del Banco Central de Reserva del Perú</p>
+    <h1>Te mostramos el <em>dato oficial</em>.</h1>
+    <p class="lead">Escribe tu pregunta o elige una. Cada respuesta trae el dato del BCRP, de qué fecha es y dónde verificarlo.</p>
     <form class="ask glass solid" id="ask" role="search">
       <label class="sr" for="q">Tu pregunta</label>
       <input id="q" type="text" autocomplete="off" enterkeyhint="send" placeholder="¿A cuánto está el dólar?">
@@ -287,13 +291,14 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
       '<p class="when">Dato del ' + esc(t.when) + (t.frequency === "daily" ? " (último día publicado)" : " (último dato publicado)") + "</p>" + dh + conv +
       '<p class="explain">' + esc(t.explain) + "</p>" +
       '<div class="chartbox">' + chart(t) + "</div>" +
-      '<p class="source"><span>' + esc(t.source) + '</span><span>serie <a href="' + esc(t.apiUrl) + '" target="_blank" rel="noreferrer">' + esc(t.code) + "</a></span><span>" + esc(t.name) + "</span></p>"
+      '<p class="source"><span>' + esc(t.source) + '</span><span>serie <a href="' + esc(t.apiUrl) + '" target="_blank" rel="noreferrer">' + esc(t.code) + "</a></span><span>" + esc(t.name) + "</span></p>" +
+      '<div class="bridge"><div><p class="eyebrow">Para programadores</p><p>El mismo dato, en tu terminal o en tu IA.</p></div><code>npx @lizethriveros/bcrp-cli ' + esc(t.id) + '</code><a class="btn" href="../">Ver la versión técnica →</a></div>'
     );
     document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.id === t.id)); });
   }
 
   function notFound(q) {
-    put('<div class="empty"><p class="eyebrow">Sin dato</p><h2>No tengo ese dato</h2><p>Esta página solo contesta con datos del Banco Central: dólar, euro, inflación, tasa de interés, reservas, PBI, desempleo, oro, cobre y plata. No es un asistente general ni calcula operaciones. Prueba con una de las preguntas de arriba, o busca más series en <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>.</p></div>');
+    put('<div class="empty"><p class="eyebrow">Sin dato</p><h2>No tengo ese dato</h2><p>Esta página solo contesta con datos del BCRP: dólar, euro, inflación, tasa de interés, reservas, PBI, desempleo, oro, cobre y plata. No es un asistente general ni calcula operaciones. Prueba con una de las preguntas de arriba, o busca más series en <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>.</p></div>');
     document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
   }
 

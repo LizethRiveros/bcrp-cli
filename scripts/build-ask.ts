@@ -63,7 +63,7 @@ const TOPICS: Topic[] = [
   },
   {
     key: "rate",
-    question: "¿Cuál es la tasa de interés del Banco Central?",
+    question: "¿Cuál es la tasa de interés del BCRP?",
     label: "Tasa de referencia",
     suffix: "%",
     explain:
@@ -77,7 +77,7 @@ const TOPICS: Topic[] = [
     label: "Reservas internacionales netas",
     prefix: "US$ ",
     explain:
-      "Es el dinero en moneda extranjera y otros activos que guarda el Banco Central. La cifra está en millones de dólares.",
+      "Es el dinero en moneda extranjera y otros activos que guarda el BCRP. La cifra está en millones de dólares.",
     keywords: ["reservas", "rin", "reservas internacionales", "ahorro del pais"],
     last: 90,
   },

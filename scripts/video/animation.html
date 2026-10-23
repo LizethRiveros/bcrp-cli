@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:oklch(0.972 0.012 85);--fg:oklch(0.22 0.02 60);--muted:oklch(0.42 0.02 60);--accent:oklch(0.46 0.12 150);--amber:oklch(0.5 0.12 55);--surface:oklch(0.995 0.005 85);--line:oklch(0.3 0.03 60 / 0.14)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.abs{position:absolute}
+#bg{inset:0;background:var(--bg)}
+#bgimg{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;object-position:50% 40%;filter:brightness(1.05) saturate(1.08) sepia(.12);opacity:1}
+#vig{inset:0;background:linear-gradient(to bottom,oklch(0.972 0.012 85 / .66),oklch(0.972 0.012 85 / .52) 45%,oklch(0.972 0.012 85 / .93))}
+.mono{font-family:'JetBrains Mono',monospace}
+.disp{font-family:Fraunces,serif}
+#brand{left:72px;top:84px;display:flex;align-items:center;gap:18px;font:500 34px Inter;letter-spacing:.02em}
+#eyebrow{left:0;width:1080px;top:228px;text-align:center;font:500 22px 'JetBrains Mono';letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.card{background:var(--surface);border-radius:56px;border:1px solid var(--line);box-shadow:0 40px 90px -36px rgba(60,50,30,.35), inset 0 1px 0 rgba(255,255,255,.7)}
+.card::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:2px;pointer-events:none;background:linear-gradient(160deg,oklch(.85 .12 145/.55),rgba(255,255,255,.06) 40%,oklch(.7 .1 150/.3));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+#composer{left:72px;top:300px;width:936px;height:204px;padding:40px 44px}
+#q{font:400 48px/64px Inter;height:64px;white-space:nowrap}
+#qrow{position:absolute;left:44px;right:36px;bottom:30px;display:flex;justify-content:space-between;align-items:center;font:400 24px Inter;color:var(--muted)}
+#send{width:84px;height:84px;border-radius:30px;background:var(--fg);display:grid;place-items:center}
+.cur{display:inline-block;width:.5em;height:1em;background:var(--accent);vertical-align:-.12em;margin-left:4px}
+#answer{left:72px;top:548px;width:936px;height:1210px;padding:56px 56px}
+#answer .row{position:relative}
+.eb{font:500 22px 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+#a-title{font:400 68px/1.1 Fraunces;margin-top:14px}
+#a-big{font:300 196px/1 Fraunces;letter-spacing:-.03em;margin-top:30px;font-variant-numeric:lining-nums tabular-nums}
+#a-when{font:400 30px/1.4 Inter;color:var(--muted);margin-top:14px}
+#a-delta{font:600 34px/1.4 Inter;color:var(--amber);margin-top:20px}
+#a-delta span{font-weight:400;color:var(--muted)}
+#a-conv{margin-top:28px;padding:18px 26px;border-left:5px solid var(--accent);font:400 34px/1.4 Inter;color:var(--muted);height:78px;white-space:nowrap}
+#a-conv b{color:var(--fg);font-weight:600}
+#chartwrap{margin-top:30px;border-top:1px solid var(--line);padding-top:12px}
+#src{margin-top:18px;font:400 21px/1.5 'JetBrains Mono';color:var(--muted);height:32px;white-space:nowrap}
+#cap{left:72px;width:936px;top:560px;font:300 118px/1.12 Fraunces;letter-spacing:-.02em}
+#cap .ln{display:block;height:134px;white-space:nowrap}
+#cap .ac{color:var(--accent);font-style:italic}
+#prog-q{left:72px;top:250px;width:936px;font:300 128px/1.1 Fraunces;letter-spacing:-.02em;height:150px;white-space:nowrap}
+#prog-sub{left:72px;top:430px;width:936px;font:400 26px/1.5 'JetBrains Mono';color:var(--muted);letter-spacing:.03em}
+#term{left:72px;top:600px;width:936px;height:880px;background:#050b08;padding:0}
+#term .bar{height:84px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 40px;font:500 22px 'JetBrains Mono';color:var(--muted);letter-spacing:.12em}
+#term .dot{width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.16)}
+#term .body{padding:40px 48px;font:400 34px/1.62 'JetBrains Mono';white-space:pre-wrap;word-break:break-word}
+#term .p{color:var(--muted)} #term .m{color:var(--muted)} #term .hl{color:var(--accent);font-weight:700}
+#term .ln{display:block;min-height:55px}
+#end{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#end-name{font:300 190px/1 Fraunces;letter-spacing:-.03em;margin-top:34px;height:200px}
+#end-tag{font:400 46px/1.35 Inter;color:var(--fg);max-width:820px;margin-top:30px}
+#end-tag b{color:var(--accent);font-weight:600}
+#end-url{font:500 30px 'JetBrains Mono';color:var(--accent);margin-top:56px;height:44px;white-space:nowrap}
+#end-by{font:400 24px 'JetBrains Mono';color:var(--muted);margin-top:26px;letter-spacing:.06em}
+
+/* ---- horizontal 1920x1080 ---- */
+html.h,html.h body,html.h #stage{width:1920px;height:1080px}
+.h #brand{left:96px;top:46px}
+.h #eyebrow{width:1920px;top:62px;left:0;text-align:center}
+.h #composer{left:160px;top:118px;width:1600px;height:150px;padding:26px 44px}
+.h #q{font-size:44px}
+.h #qrow{bottom:18px}
+.h #send{width:70px;height:70px;border-radius:26px}
+.h #answer{left:160px;top:300px;width:1600px;height:720px;padding:44px 64px;display:grid;grid-template-columns:600px 1fr;column-gap:56px;align-content:start}
+.h #answer .row{grid-column:1}
+.h #a-eb{grid-row:1}.h #a-title{grid-row:2}.h #a-big{grid-row:3}.h #a-when{grid-row:4}.h #a-delta{grid-row:5}.h #a-conv{grid-row:6}
+.h #a-big{font-size:168px;margin-top:18px}
+.h #a-title{font-size:60px;margin-top:8px}
+.h #a-when{font-size:26px;margin-top:10px}
+.h #a-delta{font-size:30px;margin-top:14px}
+.h #a-conv{font-size:32px;margin-top:22px;padding:14px 22px;height:70px}
+.h #answer #chartwrap{grid-column:2;grid-row:1/7;margin-top:0;border-top:0;padding-top:30px;align-self:center}
+.h #answer #src{grid-column:2;grid-row:7;margin-top:0}
+.h #answer{grid-template-rows:auto auto auto auto auto auto 1fr}
+.h #cap{left:160px;width:1600px;top:200px;font-size:120px;line-height:1.1}
+.h #cap .ln{height:150px}
+.h #prog-q{left:160px;top:100px;width:1600px;font-size:118px;height:140px}
+.h #prog-sub{left:160px;top:250px;width:1600px}
+.h #term{left:160px;top:330px;width:1600px;height:690px}
+.h #term .bar{height:72px}
+.h #term .body{padding:30px 48px;font-size:32px;line-height:1.55}
+.h #term .ln{min-height:50px}
+.h #end-mark{width:150px;height:150px}
+.h #end-name{font-size:170px;height:180px;margin-top:20px}
+.h #end-url{margin-top:44px}
+#term{color:#eef4ec;--fg:#eef4ec;--muted:#93a69a;--accent:oklch(0.82 0.11 145);--line:rgba(255,255,255,.11)}
+#term .cur{background:oklch(0.82 0.11 145)}
+</style></head><body>
+<div id="stage">
+  <div id="bg" class="abs"><img id="bgimg" src="bg.jpg"></div>
+  <div id="vig" class="abs"></div>
+
+  <div id="brand" class="abs"><svg width="52" height="52" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="rgba(60,50,30,.07)" stroke="rgba(60,50,30,.28)"/><path d="M5 16.5 9.5 9l3 4.5L14.5 10 19 16.5Z" fill="oklch(0.46 0.12 150)"/></svg><span>bcrp</span></div>
+
+  <div id="A">
+    <div id="eyebrow" class="abs">Datos oficiales del Banco Central de Reserva del Perú</div>
+    <div id="composer" class="abs card"><div id="q"></div>
+      <div id="qrow"><span>BCRPData · 10 indicadores</span><div id="send"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#f6f1e6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></div></div></div>
+    <div id="answer" class="abs card">
+      <div id="a-eb" class="eb row">Dato oficial · diario</div>
+      <div id="a-title" class="row">Dólar</div>
+      <div id="a-big" class="row">S/ 3.434</div>
+      <div id="a-when" class="row">Dato del 21 oct 2026 (último día publicado)</div>
+      <div id="a-delta" class="row">▲ Subió 2.34% <span>desde 21 sep 2026.</span></div>
+      <div id="a-conv" class="row"></div>
+      <div id="chartwrap" class="row"><svg id="chart" width="824" height="400" viewBox="0 0 824 400"></svg></div>
+      <div id="src" class="row"></div>
+    </div>
+  </div>
+
+  <div id="cap" class="abs"><span class="ln"></span><span class="ln"></span><span class="ln"></span><span class="ln"></span></div>
+
+  <div id="prog-q" class="abs"></div>
+  <div id="prog-sub" class="abs">el mismo dato, en tu terminal y en tu IA</div>
+  <div id="term" class="abs card"><div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span style="margin-left:16px">BCRP</span></div><div class="body" id="tb"></div></div>
+
+  <div id="end" class="abs">
+    <svg id="end-mark" width="170" height="170" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="rgba(60,50,30,.07)" stroke="rgba(60,50,30,.28)"/><path d="M5 16.5 9.5 9l3 4.5L14.5 10 19 16.5Z" fill="oklch(0.46 0.12 150)"/></svg>
+    <div id="end-name"></div>
+    <div id="end-tag">Datos oficiales del <b>BCRP</b>, para todos.</div>
+    <div id="end-url"></div>
+    <div id="end-by">por Crafter Station · código abierto</div>
+  </div>
+</div>
+<script>
+const D = __DATA__;
+const HZ = location.search.includes('h'); if(HZ) document.documentElement.classList.add('h');
+const DURATION = 26;
+const $ = id => document.getElementById(id);
+// Text that depends on the data comes from D, so the video regenerates with today's figures.
+const fmt2 = v => v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const dec = v => v.toFixed(D.decimals);
+$('a-big').textContent = D.display;
+$('a-when').textContent = 'Dato del ' + D.when + ' (último día publicado)';
+$('a-delta').innerHTML = (D.delta.up ? '▲ Subió ' : '▼ Bajó ') + D.delta.text + ' <span>desde ' + D.delta.from + '.</span>';
+if (!D.delta.up) $('a-delta').style.color = 'var(--accent)';
+const clamp = (x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const prog = (t,a,b)=>clamp((t-a)/(b-a));
+const eo = x=>1-Math.pow(1-x,3);            // ease out
+const eio = x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eb = x=>{const c=1.70158,d=c+1;return 1+d*Math.pow(x-1,3)+c*Math.pow(x-1,2)}; // slight overshoot
+let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const CLICKS=[];
+function typer(text,t0,base=.052,jit=.05,strongEnd=false){
+  const times=[]; let t=t0;
+  for(const ch of text){ times.push(t); CLICKS.push({t,s:0}); t+=base+rnd()*jit+(ch===' '?.03:0); }
+  if(strongEnd) CLICKS.push({t:t+.12,s:1});
+  return {text,times,end:t};
+}
+const typed=(ty,t)=>{let n=0;while(n<ty.times.length&&ty.times[n]<=t)n++;return ty.text.slice(0,n)};
+const caret=(t)=>(Math.floor(t*2.2)%2===0);
+function put(el,{o=1,y=0,x=0,s=1,b=0}={}){
+  el.style.opacity=o; el.style.transform=`translate(${x}px,${y}px) scale(${s})`; el.style.filter=b>0.05?`blur(${b}px)`:'none';
+}
+const rise=(t,a,d=.55,dy=36)=>{const p=eo(prog(t,a,a+d));return {o:p,y:(1-p)*dy,b:(1-p)*10}};
+
+// ---- timeline (seconds) ----
+const T_Q = typer("¿A cuánto está el dólar?",1.0);                 // composer
+const T_CONV = typer("100 dólares = S/ "+fmt2(D.value*100),6.0,.045,.03);
+const T_SRC = typer("BCRP · serie "+D.code+" · diario",8.5,.03,.02);
+const T_C = [typer("Sin inventar.",10.4,.06,.04), typer("Solo el dato",11.2,.05,.035), typer("oficial del",11.85,.05,.035), typer("BCRP.",12.4,.07,.05)];
+const T_PQ = typer("¿Programas?",13.6,.07,.05);
+const CMD1 = "$ npx @lizethriveros/bcrp-cli fx";
+const T_CMD1 = typer("npx @lizethriveros/bcrp-cli fx",15.0,.045,.03,true);   // Enter click at end
+const T_CMD2 = typer("bcrp convert 100 usd",19.4,.05,.035,true);
+const T_END = typer("bcrp",23.3,.12,.05);
+const T_URL = typer("lizethriveros.github.io/bcrp-cli",24.0,.03,.02);
+const OUT1 = [[T_CMD1.end+.3,D.name,''],[T_CMD1.end+.6,D.code+' · '+D.frequency,'m'],[T_CMD1.end+.85,'Source: '+D.source,'m'],[T_CMD1.end+1.3,D.iso+'  '+dec(D.value),'hl']];
+const OUT2 = [[T_CMD2.end+.35,fmt2(100)+' USD = '+fmt2(D.value*100)+' PEN','hl'],[T_CMD2.end+.65,'Rate: '+dec(D.value)+' S/ per US$ · interbank sell · '+D.iso,'m']];
+CLICKS.sort((a,b)=>a.t-b.t);
+window.CLICKS=CLICKS; window.DURATION=DURATION;
+
+// ---- chart ----
+const CW=HZ?900:824,CH=HZ?460:400,CL=10,CR=10,CT=HZ?80:70,CB=70;
+$('chart').setAttribute('width',CW);$('chart').setAttribute('height',CH);$('chart').setAttribute('viewBox','0 0 '+CW+' '+CH);
+const pts=D.points, N=pts.length, vs=pts.map(p=>p[1]);
+const mn=Math.min(...vs), mx=Math.max(...vs), span=mx-mn||1;
+const iMin=vs.lastIndexOf(mn), iMax=vs.lastIndexOf(mx);
+const XY=pts.map((p,i)=>[CL+i/(N-1)*(CW-CL-CR), CT+(1-(p[1]-mn)/span)*(CH-CT-CB)]);
+const fm=v=>v.toLocaleString('es-PE',{minimumFractionDigits:3,maximumFractionDigits:3});
+const short=s=>s.replace(/ \d{4}$/,'');
+function chartAt(t){
+  const p=eio(prog(t,6.4,8.6)); const pos=p*(N-1); const k=Math.floor(pos), f=pos-k;
+  const drawn=XY.slice(0,k+1); if(k<N-1) drawn.push([XY[k][0]+(XY[k+1][0]-XY[k][0])*f, XY[k][1]+(XY[k+1][1]-XY[k][1])*f]);
+  const poly=drawn.map(c=>c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
+  const base=CH-CB, last=drawn[drawn.length-1];
+  const lab=(i,text,below,showAt)=>{
+    const a=eo(prog(t,showAt,showAt+.35)); if(a<=0) return '';
+    const x=XY[i][0], y=XY[i][1], w=text.length*13.5;
+    const an = x-w/2<4?'start':x+w/2>CW-4?'end':'middle'; const tx=an==='start'?Math.max(x-6,4):an==='end'?Math.min(x+6,CW-4):x;
+    return `<g opacity="${a}"><circle cx="${x}" cy="${y}" r="${7+(1-a)*8}" fill="#fdfbf6" stroke="oklch(0.46 0.12 150)" stroke-width="3.5"/><text x="${tx}" y="${below?y+38:y-20}" text-anchor="${an}" font-family="JetBrains Mono" font-weight="500" font-size="23" fill="#2b2418">${text}</text></g>`;
+  };
+  const showMax = 6.4+ (iMax/(N-1)>0? 0:0);
+  // reveal each label when the line reaches its point
+  const reach=i=>{ // time when p*(N-1) >= i
+    const target=i/(N-1); let lo=6.4,hi=8.6; for(let n=0;n<24;n++){const m=(lo+hi)/2; if(eio(prog(m,6.4,8.6))>=target) hi=m; else lo=m;} return hi; };
+  const endDot=eo(prog(t,8.5,8.9));
+  let svg=`<line x1="${CL}" x2="${CW-CR}" y1="${base}" y2="${base}" stroke="rgba(60,50,30,.18)" stroke-width="2"/>`+
+   `<polygon points="${CL},${base} ${poly} ${last[0].toFixed(1)},${base}" fill="oklch(0.46 0.12 150)" opacity=".10"/>`+
+   `<polyline points="${poly}" fill="none" stroke="oklch(0.46 0.12 150)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>`+
+   (p>0?`<circle cx="${last[0]}" cy="${last[1]}" r="7" fill="oklch(0.46 0.12 150)"/>`:'')+
+   lab(iMax,'Máx. S/ '+fm(mx)+' · '+short(pts[iMax][0]),false,reach(iMax))+
+   lab(iMin,'Mín. S/ '+fm(mn)+' · '+short(pts[iMin][0]),true,reach(iMin))+
+   `<text x="${CL}" y="${CH-14}" font-family="JetBrains Mono" font-size="21" fill="#6a6254">${pts[0][0]}</text>`+
+   `<text x="${CW-CR}" y="${CH-14}" text-anchor="end" font-family="JetBrains Mono" font-size="21" fill="#6a6254">${pts[N-1][0]}</text>`+
+   (endDot>0?`<g opacity="${endDot}"><text x="${CW-CR}" y="${XY[N-1][1]-22}" text-anchor="end" font-family="JetBrains Mono" font-weight="500" font-size="23" fill="#2b2418">S/ ${fm(D.value)}</text></g>`:'');
+  $('chart').innerHTML=svg;
+}
+
+// ---- seek ----
+function seek(t){
+  // background: slow push-in + fade in/out
+  const bgS=1.0+0.06*(t/DURATION);
+  $('bgimg').style.transform=`scale(${bgS}) translate(${-t*2.2}px,0)`;
+  put($('brand'),{...rise(t,.2,.6,20), o:eo(prog(t,.2,.8))*(1-prog(t,22.8,23.2))});
+  const fadeAll=1-prog(t,25.5,26);   // fade to black at the end
+  $('stage').style.opacity=prog(t,0,.4)*fadeAll;
+
+  // Scene A
+  const aOut=prog(t,9.7,10.3);
+  const A=$('A'); A.style.display=aOut>=1?'none':'block';
+  put($('eyebrow'),{...rise(t,.35,.6,16),o:eo(prog(t,.35,.9))*(1-aOut)});
+  const cmp=rise(t,.5,.7,50);
+  put($('composer'),{...cmp,o:cmp.o*(1-aOut),s:(1-.04*eo(aOut))});
+  const qt=typed(T_Q,t);
+  $('q').innerHTML=qt.replace(/&/g,'&amp;')+(t>.9&&t<4.2&&(caret(t)||qt.length<T_Q.text.length&&t<T_Q.end)?'<span class="cur"></span>':'');
+  // send button press right after typing
+  const press=prog(t,T_Q.end+.25,T_Q.end+.5); $('send').style.transform=`scale(${1-.16*Math.sin(Math.PI*press)})`;
+  const aIn=eb(prog(t,3.2,3.95));
+  put($('answer'),{o:eo(prog(t,3.2,3.7))*(1-aOut),y:(1-aIn)*120,s:(.97+.03*aIn)*(1-.04*eo(aOut)),b:(1-eo(prog(t,3.2,3.8)))*14+eo(aOut)*10});
+  put($('a-eb'),rise(t,3.55,.45,18)); put($('a-title'),rise(t,3.7,.5,18));
+  put($('a-big'),rise(t,3.95,.7,40)); put($('a-when'),rise(t,4.55,.5,18)); put($('a-delta'),rise(t,5.0,.5,18));
+  $('a-conv').style.opacity=eo(prog(t,5.7,6.0)); const ct=typed(T_CONV,t);
+  $('a-conv').innerHTML=ct?ct.replace(/(S\/ [\d.]+)/,'<b>$1</b>').replace(/^(\d+ dólares)/,'$1'):'';
+  put($('chartwrap'),{o:eo(prog(t,6.1,6.5))}); chartAt(t);
+  const st=typed(T_SRC,t); $('src').textContent=st; $('src').style.opacity=prog(t,8.4,8.6);
+
+  // Scene B: captions
+  const bIn=prog(t,10.2,10.4), bOut=prog(t,13.0,13.4);
+  $('cap').style.opacity=bIn*(1-bOut); $('cap').style.transform=`translateY(${-30*eo(bOut)}px)`; $('cap').style.filter=bOut>0?`blur(${bOut*12}px)`:'none';
+  [...$('cap').children].forEach((el,i)=>{
+    const tx=typed(T_C[i],t); const doneLine=tx.length===T_C[i].text.length;
+    const lastActive = i===3 || t<T_C[i+1].times[0];
+    const showCur = tx.length>0 && lastActive && (!doneLine || caret(t)) && t<13.0;
+    el.innerHTML=(i===3?`<span class="ac">${tx}</span>`:tx)+(showCur?'<span class="cur" style="width:.38em;height:.8em"></span>':'');
+  });
+
+  // Scene C: programmers
+  const cIn=prog(t,13.5,13.7), cOut=prog(t,22.2,22.8);
+  const cOp=cIn*(1-cOut);
+  const pq=typed(T_PQ,t); $('prog-q').innerHTML=pq+((pq.length&&(pq.length<T_PQ.text.length||caret(t))&&t<15)?'<span class="cur" style="width:.38em;height:.8em"></span>':'');
+  $('prog-q').style.opacity=cOp; $('prog-q').style.transform=`translateY(${-eo(cOut)*30}px)`;
+  put($('prog-sub'),{...rise(t,14.5,.6,16),o:eo(prog(t,14.5,15.1))*(1-cOut)});
+  const tm=eb(prog(t,14.3,15.0));
+  put($('term'),{o:eo(prog(t,14.3,14.8))*(1-cOut),y:(1-tm)*140,s:.97+.03*tm,b:(1-eo(prog(t,14.3,14.9)))*12+eo(cOut)*12});
+  // terminal body
+  let h='';
+  const c1=typed(T_CMD1,t), c1done=c1.length===T_CMD1.text.length;
+  const showC1 = t>=14.9;
+  if(showC1){ h+=`<span class="ln"><span class="p">$ </span>${c1}${(!c1done||(t<T_CMD1.end+.3&&caret(t)))?'<span class="cur"></span>':''}</span>`; }
+  OUT1.forEach(([ta,tx,cl])=>{ if(t>=ta) h+=`<span class="ln ${cl}">${tx.replace(/&/g,'&amp;')}</span>`; });
+  if(t>=T_CMD1.end+1.2) h+='<span class="ln"></span>';
+  if(t>=19.35){ const c2=typed(T_CMD2,t), d2=c2.length===T_CMD2.text.length; h+=`<span class="ln"><span class="p">$ </span>${c2}${(!d2||(t<T_CMD2.end+.35&&caret(t)))?'<span class="cur"></span>':''}</span>`; }
+  OUT2.forEach(([ta,tx,cl])=>{ if(t>=ta) h+=`<span class="ln ${cl}">${tx}</span>`; });
+  if(t>=OUT2[1][0]+.8 && t<22.2 && caret(t)) h+='<span class="ln"><span class="p">$ </span><span class="cur"></span></span>';
+  $('tb').innerHTML=h;
+
+  // Scene D: end card
+  const dIn=prog(t,22.9,23.3); $('end').style.opacity=dIn;
+  const mk=eb(prog(t,22.9,23.6)); $('end-mark').style.transform=`scale(${.7+.3*mk})`;
+  const en=typed(T_END,t); $('end-name').innerHTML=en+((en.length&&en.length<4)?'<span class="cur" style="width:.3em;height:.75em"></span>':'');
+  put($('end-tag'),{...rise(t,23.9,.6,20),o:eo(prog(t,23.9,24.5))});
+  const ut=typed(T_URL,t); $('end-url').innerHTML=ut+((ut.length&&ut.length<T_URL.text.length)?'<span class="cur" style="width:.5em;height:.9em"></span>':'');
+  put($('end-by'),{o:eo(prog(t,24.9,25.4))});
+  if(dIn<=0) $('end').style.visibility='hidden'; else $('end').style.visibility='visible';
+}
+window.seek=seek;
+seek(0);
+</script></body></html>

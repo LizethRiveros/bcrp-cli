@@ -1,0 +1,9 @@
+{
+  "name": "bcrp-demo-video",
+  "private": true,
+  "type": "commonjs",
+  "description": "Generator for the animated demo videos. Not part of the published package.",
+  "dependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}

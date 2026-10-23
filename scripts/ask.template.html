@@ -375,7 +375,11 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
   $("cur").addEventListener("change", calc);
   calc();
 
-  show(T[0], "");
+  // Deep link: ?q=dolar opens that question already answered (handy to share and to record).
+  var qs = ""; try { qs = new URLSearchParams(location.search).get("q") || ""; } catch (e) {}
+  var first = qs ? find(qs) : null;
+  if (qs) $("q").value = qs;
+  if (qs && first) show(first, qs); else if (qs) notFound(qs); else show(T[0], "");
 })();
 </script>
 </body>

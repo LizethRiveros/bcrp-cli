@@ -126,7 +126,12 @@ svg.chart { width: 100%; height: auto; display: block; margin: .3rem 0; }
 svg.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 svg.chart .area { fill: var(--accent); opacity: .1; } svg.chart .dot { fill: var(--accent); }
 svg.chart .grid { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
-svg.chart text { fill: var(--muted-foreground); font: 400 10.5px var(--mono); }
+svg.chart text { fill: var(--muted-foreground); font: 400 11px var(--mono); }
+svg.chart .axis { font-size: 10.5px; } svg.chart .lbl { fill: var(--foreground); font-weight: 500; }
+svg.chart .pt { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+svg.chart .tipline { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+svg.chart .tipbg { fill: var(--foreground); } svg.chart .tiptxt { fill: var(--background); font-weight: 500; }
+svg.chart { touch-action: pan-y; cursor: crosshair; }
 .source { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .2rem .9rem; font: 400 10.5px/1.6 var(--mono); letter-spacing: -.01em; color: var(--muted-foreground); }
 .bridge { margin-top: 1.25rem; padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; background: oklch(.5 0 0 / .05); }
 .bridge > div { flex: 1 1 12rem; } .bridge p:last-child { font-size: .85rem; color: var(--muted-foreground); }
@@ -243,26 +248,66 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     return best;
   }
 
+  var CH = null; // geometry of the chart on screen, for the hover label
   function chart(t) {
     var p = t.points;
+    CH = null;
     if (p.length < 2) return "";
-    var W = 600, H = 170, L = 8, R = 8, Tp = 14, B = 22;
+    var box = $("answer").clientWidth - 48;
+    var W = Math.max(260, Math.min(620, box)), H = 200, L = 10, R = 10, Tp = 30, B = 40;
     var vs = p.map(function (x) { return x[1]; });
     var min = Math.min.apply(null, vs), max = Math.max.apply(null, vs);
     var span = max - min || 1;
+    var iMin = vs.lastIndexOf(min), iMax = vs.lastIndexOf(max), iLast = p.length - 1;
     var xy = p.map(function (x, i) {
       return [L + (i / (p.length - 1)) * (W - L - R), Tp + (1 - (x[1] - min) / span) * (H - Tp - B)];
     });
+    CH = { xy: xy, p: p, t: t, W: W, H: H };
+    var money = function (v) { return t.prefix + fmt(v, t.decimals) + t.suffix; };
     var pts = xy.map(function (c) { return c[0].toFixed(1) + "," + c[1].toFixed(1); }).join(" ");
-    var last = xy[xy.length - 1];
-    var area = L + "," + (H - B) + " " + pts + " " + last[0].toFixed(1) + "," + (H - B);
-    return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Gráfico de ' + esc(t.label) + ' desde ' + esc(p[0][0]) + ' hasta ' + esc(p[p.length - 1][0]) + '">' +
-      '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '"/>' +
+    var base = H - B;
+    var area = L + "," + base + " " + pts + " " + xy[iLast][0].toFixed(1) + "," + base;
+    // A label sits above (or below) its point; near an edge it grows inward so it never gets cut off.
+    var mark = function (i, text, below) {
+      var x = xy[i][0], y = xy[i][1], w = text.length * 6.6;
+      var anchor = x - w / 2 < 2 ? "start" : x + w / 2 > W - 2 ? "end" : "middle";
+      var tx = anchor === "start" ? Math.max(x - 4, 2) : anchor === "end" ? Math.min(x + 4, W - 2) : x;
+      return '<circle class="pt" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="3.5"/>' +
+        '<text class="lbl" x="' + tx.toFixed(1) + '" y="' + (below ? y + 17 : y - 9).toFixed(1) + '" text-anchor="' + anchor + '">' + esc(text) + "</text>";
+    };
+    var marks = mark(iMax, "Máx. " + money(max) + " · " + p[iMax][0].replace(/ \d{4}$/, ""), false);
+    if (iMin !== iMax) marks += mark(iMin, "Mín. " + money(min) + " · " + p[iMin][0].replace(/ \d{4}$/, ""), true);
+    if (iLast !== iMax && iLast !== iMin) marks += mark(iLast, money(vs[iLast]), false);
+    return '<svg class="chart" id="chartsvg" width="100%" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Gráfico de ' + esc(t.label) + " desde " + esc(p[0][0]) + " hasta " + esc(p[iLast][0]) + ". Máximo " + esc(money(max)) + ", mínimo " + esc(money(min)) + '">' +
+      '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + base + '" y2="' + base + '"/>' +
       '<polygon class="area" points="' + area + '"/><polyline class="line" points="' + pts + '"/>' +
-      '<circle class="dot" cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="4"/>' +
-      '<text x="' + L + '" y="' + (H - 6) + '">' + esc(p[0][0]) + '</text>' +
-      '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(p[p.length - 1][0]) + '</text></svg>' +
-      '<div class="cap"><span>Mínimo: ' + esc(t.prefix + fmt(min, t.decimals) + t.suffix) + '</span><span>Máximo: ' + esc(t.prefix + fmt(max, t.decimals) + t.suffix) + '</span></div>';
+      '<circle class="dot" cx="' + xy[iLast][0].toFixed(1) + '" cy="' + xy[iLast][1].toFixed(1) + '" r="4"/>' + marks +
+      '<text class="axis" x="' + L + '" y="' + (H - 8) + '">' + esc(p[0][0]) + '</text>' +
+      '<text class="axis" x="' + (W - R) + '" y="' + (H - 8) + '" text-anchor="end">' + esc(p[iLast][0]) + "</text>" +
+      '<g id="tip" visibility="hidden"><line class="tipline" y1="' + Tp + '" y2="' + base + '"/><circle class="dot" r="4.5"/><rect class="tipbg" rx="6" height="22"/><text class="tiptxt"></text></g>' +
+      '<rect id="hit" x="0" y="0" width="' + W + '" height="' + H + '" fill="transparent"/></svg>';
+  }
+
+  /** Hover or touch: shows the exact figure and date of the nearest day. */
+  function bindChart() {
+    var svg = $("chartsvg");
+    if (!svg || !CH) return;
+    var c = CH, tip = $("tip"), line = tip.querySelector("line"), dot = tip.querySelector("circle"), bg = tip.querySelector("rect"), tx = tip.querySelector("text");
+    function at(ev) {
+      var r = svg.getBoundingClientRect(), x = (ev.clientX - r.left) * (c.W / r.width);
+      var i = Math.round(((x - 10) / (c.W - 20)) * (c.p.length - 1));
+      i = Math.max(0, Math.min(c.p.length - 1, i));
+      var pt = c.xy[i], text = c.p[i][0] + " · " + c.t.prefix + fmt(c.p[i][1], c.t.decimals) + c.t.suffix, w = text.length * 6.4 + 16;
+      var bx = Math.max(2, Math.min(c.W - w - 2, pt[0] - w / 2));
+      line.setAttribute("x1", pt[0]); line.setAttribute("x2", pt[0]);
+      dot.setAttribute("cx", pt[0]); dot.setAttribute("cy", pt[1]);
+      bg.setAttribute("x", bx); bg.setAttribute("y", 2); bg.setAttribute("width", w);
+      tx.setAttribute("x", bx + 8); tx.setAttribute("y", 17); tx.textContent = text;
+      tip.setAttribute("visibility", "visible");
+    }
+    svg.addEventListener("pointermove", at);
+    svg.addEventListener("pointerdown", at);
+    svg.addEventListener("pointerleave", function () { tip.setAttribute("visibility", "hidden"); });
   }
 
   function quantity(q) {
@@ -294,6 +339,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
       '<p class="source"><span>' + esc(t.source) + '</span><span>serie <a href="' + esc(t.apiUrl) + '" target="_blank" rel="noreferrer">' + esc(t.code) + "</a></span><span>" + esc(t.name) + "</span></p>" +
       '<div class="bridge"><div><p class="eyebrow">Para programadores</p><p>El mismo dato, en tu terminal o en tu IA.</p></div><code>npx @lizethriveros/bcrp-cli ' + esc(t.id) + '</code><a class="btn" href="../">Ver la versión técnica →</a></div>'
     );
+    bindChart();
     document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.id === t.id)); });
   }
 

@@ -44,12 +44,18 @@ jobs:
         run: echo "::warning::Could not refresh the data from the BCRP; deploying the committed snapshot."
       - name: Commit refreshed data
         # Vercel redeploys on every push to main, so committing docs/ is what updates the Vercel site.
+        # If main becomes protected and the push is rejected, warn and still deploy GitHub Pages.
+        id: commit
         if: steps.refresh.outcome == 'success'
+        continue-on-error: true
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add docs
           git diff --cached --quiet || (git commit -m "chore: refresh data [skip ci]" && git push)
+      - name: Warn when the push was rejected
+        if: steps.commit.outcome == 'failure'
+        run: echo "::warning::Could not push the refreshed data to main (branch protection?). Vercel will keep the last committed snapshot."
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -205,3 +205,20 @@ const outDir = join(here, "..", "docs", "preguntar");
 mkdirSync(outDir, { recursive: true });
 writeFileSync(join(outDir, "index.html"), html);
 console.log(`\nwrote docs/preguntar/index.html (${html.length} bytes)`);
+
+// Phone widget: compact tiles for the home screen (docs/widget/) and a JSON feed for Scriptable (docs/widget/data.json).
+const widgetTopics = (topics as Record<string, unknown>[]).map((t) => ({
+  id: t.id, label: t.label, display: t.display, when: t.when, delta: t.delta,
+}));
+const widgetTemplate = readFileSync(join(here, "widget.template.html"), "utf8");
+const widgetDir = join(here, "..", "docs", "widget");
+mkdirSync(widgetDir, { recursive: true });
+const updated = formatPeriod(fxPeriod || new Date().toISOString().slice(0, 10));
+writeFileSync(
+  join(widgetDir, "index.html"),
+  widgetTemplate
+    .replace("{{DATA}}", () => JSON.stringify(widgetTopics).replace(/</g, "\u003c"))
+    .replace("{{UPDATED}}", updated),
+);
+writeFileSync(join(widgetDir, "data.json"), JSON.stringify({ updated, topics: widgetTopics }, null, 1));
+console.log("wrote docs/widget/index.html and data.json");

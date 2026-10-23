@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BCRP</title>
+<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#14181a" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BCRP">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root { color-scheme: light dark; --bg: #f6f1e7; --card: #fffdf8; --fg: #231f18; --muted: #6b6354; --line: #2a221412; --up: #a8531a; --down: #2f6b3f; }
+@media (prefers-color-scheme: dark) { :root { --bg: #14181a; --card: #1b2022; --fg: #f4f2ea; --muted: #a9aea6; --line: #ffffff18; --up: #f0b070; --down: #8fd19e; } }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--fg); font: 16px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  min-height: 100dvh; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+main { max-width: 420px; margin: 0 auto; }
+.grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.tile { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; aspect-ratio: 1; display: flex; flex-direction: column; justify-content: space-between; }
+.label { font-size: 13px; color: var(--muted); font-weight: 500; }
+.value { font: 600 clamp(26px, 8vw, 34px)/1.05 ui-serif, Georgia, serif; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.delta { font-size: 13px; font-weight: 500; }
+.delta { color: var(--muted); } .delta.up { color: var(--up); } .delta.down { color: var(--down); }
+.when { font-size: 12px; color: var(--muted); }
+footer { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
+footer a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+  <div class="grid" id="grid"></div>
+  <footer>Fuente: BCRP · actualizado al {{UPDATED}}<br><a href="../preguntar/">Pregúntale al BCRP</a></footer>
+</main>
+<script>
+const DATA = {{DATA}};
+// ?t=fx,euro,gold chooses and orders the tiles (2, 4 or 6 look best)
+const ids = (new URLSearchParams(location.search).get("t") || "fx,euro,inflation,rate").split(",");
+const grid = document.getElementById("grid");
+for (const id of ids) {
+  const t = DATA.find((x) => x.id === id);
+  if (!t) continue;
+  const el = document.createElement("div");
+  el.className = "tile";
+  const d = t.delta;
+  const flat = d && parseFloat(d.text) === 0;
+  const arrow = !d ? "" : flat ? '<div class="delta">sin cambio</div>' : '<div class="delta ' + (d.up ? "up" : "down") + '">' + (d.up ? "▲ " : "▼ ") + d.text + "</div>";
+  el.innerHTML = '<div class="label"></div><div><div class="value"></div>' + arrow + '</div><div class="when"></div>';
+  el.querySelector(".label").textContent = t.label;
+  el.querySelector(".value").textContent = t.display;
+  el.querySelector(".when").textContent = t.when;
+  grid.appendChild(el);
+}
+</script>
+</body>
+</html>

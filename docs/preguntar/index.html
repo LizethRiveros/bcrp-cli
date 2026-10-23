@@ -12,7 +12,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 /* Design language of peru-gov (Crafter Research): warm oklch palette, Fraunces + Inter, glass cards with a
-   hairline gradient border, a Machu Picchu backdrop that resolves from blur to sharp. */
+   hairline gradient border, a photo backdrop that resolves from blur to sharp. */
 :root {
   color-scheme: light dark;
   --background: oklch(0.972 0.012 85); --foreground: oklch(0.22 0.02 60); --surface: oklch(0.995 0.005 85);
@@ -54,7 +54,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* backdrop */
 .backdrop { position: fixed; inset: 0; z-index: -1; overflow: hidden; background: var(--background); pointer-events: none; }
-.backdrop img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 40%; transform: scale(1.1); filter: blur(24px);
+.backdrop img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 35%; transform: scale(1.1); filter: blur(24px);
   transition: filter 1.4s var(--ease), transform 1.4s var(--ease); }
 .backdrop.loaded img { transform: scale(1); filter: brightness(1.05) saturate(1.08) sepia(.12); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backdrop.loaded img { filter: brightness(.8); } }
@@ -148,7 +148,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
 </script>
 </head>
 <body>
-<div class="backdrop" id="backdrop" aria-hidden="true"><img id="bgimg" src="machu-picchu.jpg" alt="" fetchpriority="high"></div>
+<div class="backdrop" id="backdrop" aria-hidden="true"><img id="bgimg" src="bcrp-sede.jpg" alt="" fetchpriority="high"></div>
 
 <header class="top">
   <a class="brand" href="../" aria-label="bcrp, inicio">
@@ -198,7 +198,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
 <footer>
   <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>; se actualizan en días hábiles y la página fue generada con datos hasta el 21 oct 2026.</p>
   <p>El tipo de cambio es una referencia entre bancos: tu banco o casa de cambio publica el suyo. Esto no es una recomendación para comprar o vender.</p>
-  <p>Diseño basado en <a href="https://peru-gov.crafter.ing">peru-gov</a> de Crafter Research. Foto: «Machu Picchu» de Martin St-Amant, <a href="https://commons.wikimedia.org/wiki/File:80_-_Machu_Picchu_-_Juin_2009_-_edit.2.jpg">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>, redimensionada.</p>
+  <p>Diseño basado en <a href="https://peru-gov.crafter.ing">peru-gov</a> de Crafter Research. Foto: «Edificio del BCRP en Lima» de AlejandroFC, <a href="https://commons.wikimedia.org/wiki/File:Edificio_del_BCRP_en_Lima_01.jpg">Wikimedia Commons</a>, <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>, redimensionada.</p>
   <p>Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a> · <a href="https://github.com/LizethRiveros/bcrp-cli">código abierto</a>.</p>
 </footer>
 

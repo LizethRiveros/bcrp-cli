@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pregúntale al Banco Central</title>
+<meta name="description" content="Pregunta por el dólar, la inflación, la tasa de interés y más. Te mostramos el dato oficial del Banco Central de Reserva del Perú, su fecha y su fuente.">
+<meta property="og:title" content="Pregúntale al Banco Central">
+<meta property="og:description" content="El dato oficial del BCRP, con su fecha y su fuente, sin tecnicismos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Same palette and type as the developer page and crafter.ing. */
+:root {
+  --bg: #f6fbf8; --text: #07100d; --muted: #617369; --muted-strong: #34463c; --accent: #24523f;
+  --border: #173f3129; --surface: #ffffffb8; --up: #8a4b12; --down: #24523f;
+  --font-sans: "Geist", Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #07100d; --text: #eef4ec; --muted: #8da093; --muted-strong: #bac9bd; --accent: #cfe7d2;
+    --border: #cfe7d22e; --surface: #11211ac7; --up: #e7b988; --down: #cfe7d2; color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font: 16px/1.6 var(--font-sans); -webkit-font-smoothing: antialiased; }
+a { color: inherit; text-decoration-color: var(--border); text-underline-offset: 4px; }
+a:hover { text-decoration-color: var(--accent); }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.wrap { max-width: 64rem; margin: 0 auto; padding: 0 1.25rem; }
+.eyebrow { font: 500 .68rem/1 var(--font-mono); letter-spacing: .15em; text-transform: uppercase; color: var(--accent); }
+.bar { display: flex; justify-content: space-between; align-items: center; padding: 1.25rem 0; border-bottom: 1px solid var(--border); font-size: .875rem; }
+.logo { font: 600 .95rem/1 var(--font-mono); text-decoration: none; }
+.bar a.dev { color: var(--muted-strong); text-decoration: none; }
+
+header.hero { padding: clamp(3rem, 8vw, 6rem) 0 2rem; }
+h1 { font-size: clamp(2.3rem, 5.4vw, 4.4rem); font-weight: 470; letter-spacing: -.05em; line-height: 1; margin-top: 1.1rem; max-width: 15ch; text-wrap: balance; }
+.lead { color: var(--muted-strong); font-size: clamp(1rem, 1.4vw, 1.15rem); margin-top: 1.2rem; max-width: 38rem; }
+
+form.ask { display: flex; gap: .5rem; margin-top: 2rem; max-width: 40rem; }
+form.ask input {
+  flex: 1; min-width: 0; font: 400 1.05rem/1.2 var(--font-sans); color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: .5rem; padding: .95rem 1rem;
+}
+form.ask input::placeholder { color: var(--muted); }
+button.go, .chip {
+  font: 500 .85rem/1 var(--font-sans); color: var(--bg); background: var(--text); border: 0; border-radius: .5rem; padding: 0 1.3rem; cursor: pointer;
+}
+.chips { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; max-width: 46rem; }
+.chip { color: var(--text); background: transparent; border: 1px solid var(--border); padding: .55rem .8rem; font-weight: 400; font-size: .82rem; }
+.chip:hover, .chip[aria-pressed="true"] { border-color: var(--accent); background: var(--surface); }
+
+/* the answer */
+.answer { border: 1px solid var(--border); border-radius: .75rem; background: var(--surface); padding: clamp(1.25rem, 3vw, 2rem); margin-top: 1rem; }
+.answer h2 { font: 500 .72rem/1.3 var(--font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+.big { font: 500 clamp(2.6rem, 8vw, 4.6rem)/1.05 var(--font-mono); letter-spacing: -.05em; margin-top: .6rem; }
+.when { color: var(--muted-strong); margin-top: .2rem; }
+.delta { margin-top: .6rem; font-size: .95rem; color: var(--muted-strong); }
+.delta b { font-weight: 500; }
+.delta .up { color: var(--up); } .delta .down { color: var(--down); }
+.explain { margin-top: 1.1rem; max-width: 38rem; color: var(--text); }
+.conv { margin-top: .9rem; padding: .7rem .9rem; border-left: 2px solid var(--accent); color: var(--muted-strong); }
+.chartbox { margin-top: 1.5rem; }
+.chartbox .cap { font: 400 .72rem/1.4 var(--font-mono); color: var(--muted); display: flex; justify-content: space-between; gap: 1rem; }
+svg.chart { width: 100%; height: auto; display: block; margin: .4rem 0; }
+svg.chart .line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+svg.chart .area { fill: var(--accent); opacity: .08; }
+svg.chart .dot { fill: var(--accent); }
+svg.chart .grid { stroke: var(--border); stroke-width: 1; vector-effect: non-scaling-stroke; }
+svg.chart text { fill: var(--muted); font: 400 11px var(--font-mono); }
+.source { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font: 400 .75rem/1.7 var(--font-mono); }
+.source a { color: var(--muted-strong); }
+.empty p { margin-top: .6rem; color: var(--muted-strong); max-width: 36rem; }
+
+/* converter */
+section.tool { border-top: 1px solid var(--border); margin-top: 3rem; padding: 2.5rem 0; }
+section.tool h2 { font-size: clamp(1.4rem, 2.6vw, 2rem); font-weight: 470; letter-spacing: -.035em; line-height: 1.1; margin-top: .8rem; }
+.convert { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: 1.2rem; }
+.convert input, .convert select { font: 400 1rem/1.2 var(--font-sans); color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; padding: .75rem .9rem; }
+.convert input { width: 9rem; }
+.convert output { font: 500 1.35rem/1.2 var(--font-mono); letter-spacing: -.03em; }
+.small { color: var(--muted); font-size: .8rem; margin-top: .8rem; max-width: 40rem; }
+
+footer { border-top: 1px solid var(--border); padding: 2rem 0 4rem; color: var(--muted); font: 400 .72rem/1.7 var(--font-mono); }
+footer p { max-width: 56rem; margin-bottom: .5rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 520px) { form.ask { flex-direction: column; } button.go { padding: .95rem; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <a class="logo" href="../">bcrp</a>
+    <a class="dev" href="../">Para programadores →</a>
+  </div>
+
+  <header class="hero">
+    <p class="eyebrow">Datos oficiales del Banco Central</p>
+    <h1>Pregunta. Te mostramos el dato oficial.</h1>
+    <p class="lead">Escribe tu pregunta o elige una. Cada respuesta trae el dato del Banco Central de Reserva del Perú, de qué fecha es y dónde verificarlo.</p>
+    <form class="ask" id="ask" role="search">
+      <label class="sr" for="q">Tu pregunta</label>
+      <input id="q" type="text" autocomplete="off" placeholder="Ej.: ¿a cuánto está el dólar?">
+      <button class="go" type="submit">Preguntar</button>
+    </form>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <main>
+    <article class="answer" id="answer" aria-live="polite"></article>
+
+    <section class="tool" aria-labelledby="conv-h">
+      <p class="eyebrow">Calculadora</p>
+      <h2 id="conv-h">¿Cuántos soles son?</h2>
+      <div class="convert">
+        <input id="amt" type="number" inputmode="decimal" min="0" value="100" aria-label="Monto">
+        <select id="cur" aria-label="Moneda">
+          <option value="fx">dólares</option>
+          <option value="euro">euros</option>
+        </select>
+        <span aria-hidden="true">=</span>
+        <output id="out" for="amt cur"></output>
+      </div>
+      <p class="small" id="convnote"></p>
+    </section>
+  </main>
+
+  <footer>
+    <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>; se actualizan en días hábiles y la página fue generada con datos hasta el 21 oct 2026.</p>
+    <p>El tipo de cambio es una referencia entre bancos: tu banco o casa de cambio publica el suyo. Esto no es una recomendación para comprar o vender.</p>
+    <p>Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a> · <a href="https://github.com/LizethRiveros/bcrp-cli">código abierto</a>.</p>
+  </footer>
+</div>
+
+<script>
+(function () {
+  var DATA = {"topics":[{"id":"fx","question":"¿A cuánto está el dólar?","label":"Dólar","keywords":["dolar","dolares","tipo de cambio","cambio","usd","billete verde","us$"],"explain":"Es cuántos soles cuesta un dólar en el mercado entre bancos (interbancario, precio de venta). Bancos y casas de cambio publican su propio precio, un poco distinto.","display":"S/ 3.434","value":3.43357142857143,"decimals":3,"prefix":"S/ ","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":true,"text":"2.34%","from":"21 sep 2026"},"points":[["18 jun 2026",3.38557142857143],["19 jun 2026",3.38214285714286],["22 jun 2026",3.3845],["23 jun 2026",3.40685714285714],["24 jun 2026",3.42292857142857],["25 jun 2026",3.41221428571429],["26 jun 2026",3.41092857142857],["30 jun 2026",3.41014285714286],["1 jul 2026",3.41457142857143],["2 jul 2026",3.40514285714286],["3 jul 2026",3.39828571428571],["6 jul 2026",3.406],["7 jul 2026",3.40614285714286],["8 jul 2026",3.4105],["9 jul 2026",3.40242857142857],["10 jul 2026",3.39364285714286],["13 jul 2026",3.40271428571429],["14 jul 2026",3.393],["15 jul 2026",3.38628571428571],["16 jul 2026",3.39407142857143],["17 jul 2026",3.40828571428571],["20 jul 2026",3.40378571428571],["21 jul 2026",3.39914285714286],["22 jul 2026",3.40114285714286],["24 jul 2026",3.40664285714286],["30 jul 2026",3.393],["31 jul 2026",3.39842857142857],["3 ago 2026",3.39585714285714],["4 ago 2026",3.39014285714286],["5 ago 2026",3.38914285714286],["7 ago 2026",3.38078571428571],["10 ago 2026",3.37692857142857],["11 ago 2026",3.3665],["12 ago 2026",3.36228571428571],["13 ago 2026",3.36485714285714],["14 ago 2026",3.36457142857143],["17 ago 2026",3.36285714285714],["18 ago 2026",3.36057142857143],["19 ago 2026",3.35728571428571],["20 ago 2026",3.355],["21 ago 2026",3.34728571428571],["24 ago 2026",3.34714285714286],["25 ago 2026",3.34457142857143],["26 ago 2026",3.34528571428571],["27 ago 2026",3.34514285714286],["28 ago 2026",3.35457142857143],["31 ago 2026",3.36292857142857],["1 sep 2026",3.36585714285714],["2 sep 2026",3.35771428571429],["3 sep 2026",3.36042857142857],["4 sep 2026",3.36542857142857],["7 sep 2026",3.36035714285714],["8 sep 2026",3.35557142857143],["9 sep 2026",3.35814285714286],["10 sep 2026",3.37157142857143],["11 sep 2026",3.36757142857143],["14 sep 2026",3.38085714285714],["15 sep 2026",3.376],["16 sep 2026",3.36671428571429],["17 sep 2026",3.36371428571429],["18 sep 2026",3.3585],["21 sep 2026",3.35514285714286],["22 sep 2026",3.36064285714286],["23 sep 2026",3.38778571428571],["24 sep 2026",3.40557142857143],["25 sep 2026",3.41992857142857],["28 sep 2026",3.439],["29 sep 2026",3.44514285714286],["30 sep 2026",3.432],["1 oct 2026",3.45385714285714],["2 oct 2026",3.43814285714286],["5 oct 2026",3.42714285714286],["6 oct 2026",3.43471428571429],["7 oct 2026",3.44978571428571],["9 oct 2026",3.45385714285714],["12 oct 2026",3.43892857142857],["13 oct 2026",3.43785714285714],["14 oct 2026",3.43914285714286],["15 oct 2026",3.42821428571429],["16 oct 2026",3.42828571428571],["19 oct 2026",3.43928571428571],["20 oct 2026",3.43092857142857],["21 oct 2026",3.43357142857143]],"name":"Tipo de cambio - TC Interbancario (S/ por US$) - Venta","code":"PD04638PD","source":"SBS, Reuters, Datatec, BCRP","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04638PD/json"},{"id":"euro","question":"¿A cuánto está el euro?","label":"Euro","keywords":["euro","euros","eur"],"explain":"Es cuántos soles cuesta un euro según el tipo de cambio de venta que publica el BCRP.","display":"S/ 3.871","value":3.871,"decimals":3,"prefix":"S/ ","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":false,"text":"2.05%","from":"21 sep 2026"},"points":[["18 jun 2026",4.085],["19 jun 2026",4.031],["22 jun 2026",3.926],["23 jun 2026",4.026],["24 jun 2026",3.967],["25 jun 2026",3.953],["26 jun 2026",4.052],["30 jun 2026",3.927],["1 jul 2026",4.002],["2 jul 2026",4.069],["3 jul 2026",4.028],["6 jul 2026",3.998],["7 jul 2026",4.025],["8 jul 2026",3.989],["9 jul 2026",4.015],["10 jul 2026",4.014],["13 jul 2026",4.054],["14 jul 2026",4.029],["15 jul 2026",4.008],["16 jul 2026",4.086],["17 jul 2026",3.964],["20 jul 2026",4.087],["21 jul 2026",3.937],["22 jul 2026",3.96],["24 jul 2026",4.001],["30 jul 2026",3.993],["31 jul 2026",4.021],["3 ago 2026",4.054],["4 ago 2026",4.075],["5 ago 2026",4.035],["7 ago 2026",3.981],["10 ago 2026",3.949],["11 ago 2026",4.045],["12 ago 2026",4.003],["13 ago 2026",4.029],["14 ago 2026",4.027],["17 ago 2026",3.994],["18 ago 2026",4.082],["19 ago 2026",4.074],["20 ago 2026",3.923],["21 ago 2026",4.055],["24 ago 2026",3.939],["25 ago 2026",3.933],["26 ago 2026",4.085],["27 ago 2026",4.02],["28 ago 2026",3.948],["31 ago 2026",3.882],["1 sep 2026",3.924],["2 sep 2026",3.954],["3 sep 2026",3.914],["4 sep 2026",3.925],["7 sep 2026",3.909],["8 sep 2026",3.917],["9 sep 2026",3.941],["10 sep 2026",4.092],["11 sep 2026",3.915],["14 sep 2026",4.11],["15 sep 2026",3.888],["16 sep 2026",3.901],["17 sep 2026",4.054],["18 sep 2026",3.877],["21 sep 2026",3.952],["22 sep 2026",3.863],["23 sep 2026",3.948],["24 sep 2026",3.883],["25 sep 2026",4.053],["28 sep 2026",4.053],["29 sep 2026",3.905],["30 sep 2026",4.108],["1 oct 2026",4.094],["2 oct 2026",4.087],["5 oct 2026",4.001],["6 oct 2026",3.879],["7 oct 2026",4.051],["9 oct 2026",3.851],["12 oct 2026",3.867],["13 oct 2026",3.867],["14 oct 2026",3.889],["15 oct 2026",3.858],["16 oct 2026",4.034],["19 oct 2026",4.045],["20 oct 2026",3.995],["21 oct 2026",3.871]],"name":"Tipo de cambio - TC Euro (S/ por Euro) - Venta","code":"PD04648PD","source":"SBS, Reuters, Datatec, BCRP","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04648PD/json"},{"id":"inflation","question":"¿Cuánto subieron los precios?","label":"Inflación","keywords":["inflacion","precios","subieron","caro","costo de vida","ipc","subida"],"explain":"Es cuánto subieron los precios de lo que consume una familia en Lima Metropolitana, comparando el último mes con el mismo mes del año anterior.","display":"4.55%","value":4.54865469481509,"decimals":2,"prefix":"","suffix":"%","when":"sep 2026","frequency":"monthly","delta":{"up":true,"text":"0.11 puntos","from":"ago 2026"},"points":[["oct 2024",2.00918040984485],["nov 2024",2.27199072148831],["dic 2024",1.96630270142824],["ene 2025",1.85158283440667],["feb 2025",1.4773290589483],["mar 2025",1.27718026977924],["abr 2025",1.65183401740204],["may 2025",1.68666289219268],["jun 2025",1.69370904576716],["jul 2025",1.6888009685144],["ago 2025",1.10633077531991],["sep 2025",1.35839342135424],["oct 2025",1.35177475650182],["nov 2025",1.36861256988846],["dic 2025",1.50879973918667],["ene 2026",1.70091694832201],["feb 2026",2.21416625767848],["mar 2026",3.80454581291585],["abr 2026",4.01414363472928],["may 2026",3.90505240621645],["jun 2026",4.00890965651766],["jul 2026",4.06515256208199],["ago 2026",4.43780929778608],["sep 2026",4.54865469481509]],"name":"Índice de precios Lima Metropolitana (var% 12 meses) - IPC","code":"PN01273PM","source":"INEI","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PN01273PM/json"},{"id":"rate","question":"¿Cuál es la tasa de interés del Banco Central?","label":"Tasa de referencia","keywords":["tasa","interes","referencia","tasa de referencia","tpm","prestamos"],"explain":"Es la tasa que fija el BCRP como guía para el costo del dinero en el país. Los bancos la toman como referencia para sus propias tasas.","display":"4.25%","value":4.25,"decimals":2,"prefix":"","suffix":"%","when":"22 oct 2026","frequency":"daily","delta":{"up":false,"text":"0.00 puntos","from":"22 sep 2026"},"points":[["19 jun 2026",4.25],["22 jun 2026",4.25],["23 jun 2026",4.25],["24 jun 2026",4.25],["25 jun 2026",4.25],["26 jun 2026",4.25],["30 jun 2026",4.25],["1 jul 2026",4.25],["2 jul 2026",4.25],["3 jul 2026",4.25],["6 jul 2026",4.25],["7 jul 2026",4.25],["8 jul 2026",4.25],["9 jul 2026",4.25],["10 jul 2026",4.25],["13 jul 2026",4.25],["14 jul 2026",4.25],["15 jul 2026",4.25],["16 jul 2026",4.25],["17 jul 2026",4.25],["20 jul 2026",4.25],["21 jul 2026",4.25],["22 jul 2026",4.25],["24 jul 2026",4.25],["30 jul 2026",4.25],["31 jul 2026",4.25],["3 ago 2026",4.25],["4 ago 2026",4.25],["5 ago 2026",4.25],["7 ago 2026",4.25],["10 ago 2026",4.25],["11 ago 2026",4.25],["12 ago 2026",4.25],["13 ago 2026",4.25],["14 ago 2026",4.25],["17 ago 2026",4.25],["18 ago 2026",4.25],["19 ago 2026",4.25],["20 ago 2026",4.25],["21 ago 2026",4.25],["24 ago 2026",4.25],["25 ago 2026",4.25],["26 ago 2026",4.25],["27 ago 2026",4.25],["28 ago 2026",4.25],["31 ago 2026",4.25],["1 sep 2026",4.25],["2 sep 2026",4.25],["3 sep 2026",4.25],["4 sep 2026",4.25],["7 sep 2026",4.25],["8 sep 2026",4.25],["9 sep 2026",4.25],["10 sep 2026",4.25],["11 sep 2026",4.25],["14 sep 2026",4.25],["15 sep 2026",4.25],["16 sep 2026",4.25],["17 sep 2026",4.25],["18 sep 2026",4.25],["21 sep 2026",4.25],["22 sep 2026",4.25],["23 sep 2026",4.25],["24 sep 2026",4.25],["25 sep 2026",4.25],["28 sep 2026",4.25],["29 sep 2026",4.25],["30 sep 2026",4.25],["1 oct 2026",4.25],["2 oct 2026",4.25],["5 oct 2026",4.25],["6 oct 2026",4.25],["7 oct 2026",4.25],["9 oct 2026",4.25],["12 oct 2026",4.25],["13 oct 2026",4.25],["14 oct 2026",4.25],["15 oct 2026",4.25],["16 oct 2026",4.25],["19 oct 2026",4.25],["20 oct 2026",4.25],["21 oct 2026",4.25],["22 oct 2026",4.25]],"name":"Tasas de interés - Tasa de Referencia de la Política Monetaria","code":"PD12301MD","source":"BCRP, Ministerio de Economía y Finanzas","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD12301MD/json"},{"id":"reserves","question":"¿Cuántas reservas tiene el Perú?","label":"Reservas internacionales netas","keywords":["reservas","rin","reservas internacionales","ahorro del pais"],"explain":"Es el dinero en moneda extranjera y otros activos que guarda el Banco Central. La cifra está en millones de dólares.","display":"US$ 96,755","value":96754.53818488,"decimals":0,"prefix":"US$ ","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":false,"text":"0.30%","from":"21 sep 2026"},"points":[["18 jun 2026",98305.69341492],["19 jun 2026",98243],["22 jun 2026",98536.88086633],["23 jun 2026",98560.79050351],["24 jun 2026",98309.08817059],["25 jun 2026",98538.55478292],["26 jun 2026",96490.19936241],["30 jun 2026",95553.17614223],["1 jul 2026",97700.63384714],["2 jul 2026",100349.95779955],["3 jul 2026",100187.56148987],["6 jul 2026",99818.62796389],["7 jul 2026",99699.90045836],["8 jul 2026",99469.37484139],["9 jul 2026",99771.13200666],["10 jul 2026",99682.96304931],["13 jul 2026",99619.18931562],["14 jul 2026",99489.34357277],["15 jul 2026",99697.5253883],["16 jul 2026",100263],["17 jul 2026",100465.13376635],["20 jul 2026",100534],["21 jul 2026",100181.8020943],["22 jul 2026",97422.31475405],["24 jul 2026",95610.24738714],["30 jul 2026",95923.3229548],["31 jul 2026",97034.42846065],["3 ago 2026",96505.76311983],["4 ago 2026",98853.21328976],["5 ago 2026",98667.62295313],["7 ago 2026",98966.96582544],["10 ago 2026",99134.5012976],["11 ago 2026",99298],["12 ago 2026",99639.20577376],["13 ago 2026",99542.7316722],["14 ago 2026",99248.19786294],["17 ago 2026",99032.97176696],["18 ago 2026",99094],["19 ago 2026",99364.49481036],["20 ago 2026",99178.92796309],["21 ago 2026",99108],["24 ago 2026",99091.30453551],["25 ago 2026",99504.231048],["26 ago 2026",99429.56428793],["27 ago 2026",98255.30676476],["28 ago 2026",96578.21972397],["31 ago 2026",96517.90583504],["1 sep 2026",98965.29416269],["2 sep 2026",98670.48227979],["3 sep 2026",98745.63449125],["4 sep 2026",98239.24869468],["7 sep 2026",98226.81413481],["8 sep 2026",98054.57773569],["9 sep 2026",98389.19081613],["10 sep 2026",97929],["11 sep 2026",98123.56226673],["14 sep 2026",97798.45458647],["15 sep 2026",97683.30618227],["16 sep 2026",97236.83895739],["17 sep 2026",97606.33426211],["18 sep 2026",97257.30386894],["21 sep 2026",97049.32110984],["22 sep 2026",96945.86427817],["23 sep 2026",97021.54330187],["24 sep 2026",96661.46794133],["25 sep 2026",96579.44341368],["28 sep 2026",95140.06321636],["29 sep 2026",92735.5339654],["30 sep 2026",92179.51353365],["1 oct 2026",95661],["2 oct 2026",95887.23676532],["5 oct 2026",95745.75316568],["6 oct 2026",96047.84383094],["7 oct 2026",96049.86991361],["9 oct 2026",96239.93461021],["12 oct 2026",96204.65320583],["13 oct 2026",96468.77438073],["14 oct 2026",96173.00737678],["15 oct 2026",96246.41940454],["16 oct 2026",96654.60272427],["19 oct 2026",96371.954121],["20 oct 2026",96380.43831941],["21 oct 2026",96754.53818488]],"name":"Reservas internacionales (millones US$) - Reservas internacionales netas","code":"PD04650MD","source":"BCRP","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04650MD/json"},{"id":"gdp","question":"¿Cuánto crece la economía?","label":"PBI","keywords":["pbi","economia","crece","crecimiento","produccion","pib"],"explain":"Es cuánto creció o cayó la producción del país, comparando el último mes con el mismo mes del año anterior.","display":"3.6%","value":3.5592604174106,"decimals":1,"prefix":"","suffix":"%","when":"jul 2026","frequency":"monthly","delta":{"up":true,"text":"1.8 puntos","from":"jun 2026"},"points":[["ago 2024",3.97028100948149],["sep 2024",3.49053235679599],["oct 2024",3.83110341773776],["nov 2024",4.38200682962149],["dic 2024",5.06622215564914],["ene 2025",4.40268408625997],["feb 2025",2.83135361395376],["mar 2025",4.77444217851402],["abr 2025",1.29967380625761],["may 2025",2.02240324884952],["jun 2025",4.94005155999517],["jul 2025",3.55064175415287],["ago 2025",3.16499600945614],["sep 2025",4.39260049012083],["oct 2025",4.17632153639052],["nov 2025",1.58920236608024],["dic 2025",4.14063348002019],["ene 2026",3.75563441378696],["feb 2026",3.68037764645394],["mar 2026",3.26792981233946],["abr 2026",3.80791279395248],["may 2026",2.17541272858415],["jun 2026",1.7513508584607],["jul 2026",3.5592604174106]],"name":"Producto bruto interno y demanda interna (variación porcentual interanual) - PBI","code":"PN01728AM","source":"INEI, Ministerio de Agricultura, Ministerio de Energía y Minas, Ministerio de la Producción","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PN01728AM/json"},{"id":"unemployment","question":"¿Cuánto es el desempleo?","label":"Desempleo en Lima","keywords":["desempleo","desempleado","empleo","trabajo","desocupacion"],"explain":"Es el porcentaje de personas que buscan trabajo y no lo encuentran en Lima Metropolitana (promedio de los últimos 3 meses).","display":"4.8%","value":4.80377918575145,"decimals":1,"prefix":"","suffix":"%","when":"ago 2026","frequency":"monthly","delta":{"up":true,"text":"0.1 puntos","from":"jul 2026"},"points":[["sep 2024",5.93403868242557],["oct 2024",5.74744726624176],["nov 2024",5.66791032657986],["dic 2024",5.52722588368044],["ene 2025",6.15399676669848],["feb 2025",6.29667421797395],["mar 2025",6.5551581924132],["abr 2025",5.91099326215221],["may 2025",5.58840410171026],["jun 2025",6.37225318082418],["jul 2025",6.05857130008092],["ago 2025",5.98730317433182],["sep 2025",5.74957515872896],["oct 2025",5.93693531631924],["nov 2025",5.92567917868739],["dic 2025",4.98799670957274],["ene 2026",6.33489418457471],["feb 2026",6.36994305290923],["mar 2026",6.84335458752875],["abr 2026",5.31907056690782],["may 2026",4.97860650938346],["jun 2026",4.91312664821157],["jul 2026",4.68136660632325],["ago 2026",4.80377918575145]],"name":"Empleo Mensual en Lima Metropolitana - Promedio móvil tres meses (porcentaje) - Tasa de Desempleo (%)","code":"PN38063GM","source":"INEI","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PN38063GM/json"},{"id":"gold","question":"¿A cuánto está el oro?","label":"Oro","keywords":["oro"],"explain":"Precio internacional de una onza troy de oro en Londres, en dólares.","display":"US$ 4,140.74","value":4140.74,"decimals":2,"prefix":"US$ ","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":false,"text":"4.67%","from":"21 sep 2026"},"points":[["18 jun 2026",4209.97],["19 jun 2026",4155.71],["22 jun 2026",4190.06],["23 jun 2026",4117.19],["24 jun 2026",3999.41],["25 jun 2026",4026.73],["26 jun 2026",4088.74],["29 jun 2026",4015.91],["30 jun 2026",4008.02],["1 jul 2026",4030.65],["2 jul 2026",4122.35],["3 jul 2026",4176.94],["6 jul 2026",4165.23],["7 jul 2026",4106.24],["8 jul 2026",4077.43],["9 jul 2026",4123.64],["10 jul 2026",4119.93],["13 jul 2026",4002.39],["14 jul 2026",4052.85],["15 jul 2026",4060.55],["16 jul 2026",3976.5],["17 jul 2026",4017.39],["20 jul 2026",4008.03],["21 jul 2026",4076.99],["22 jul 2026",4130.25],["23 jul 2026",4049.48],["24 jul 2026",4052.79],["27 jul 2026",4076.26],["28 jul 2026",4029.61],["29 jul 2026",4067.56],["30 jul 2026",4103.41],["31 jul 2026",4046.15],["3 ago 2026",4054.33],["4 ago 2026",4077.99],["5 ago 2026",4246.82],["6 ago 2026",4239.42],["7 ago 2026",4341.56],["10 ago 2026",4390.95],["11 ago 2026",4370.11],["12 ago 2026",4408.29],["13 ago 2026",4350.39],["14 ago 2026",4376.4],["17 ago 2026",4415.99],["18 ago 2026",4334.5],["19 ago 2026",4515.58],["20 ago 2026",4516.58],["21 ago 2026",4603.07],["24 ago 2026",4652.22],["25 ago 2026",4657.17],["26 ago 2026",4591.07],["27 ago 2026",4599.15],["28 ago 2026",4455.11],["31 ago 2026",4437.38],["1 sep 2026",4328.82],["2 sep 2026",4381.68],["3 sep 2026",4472.92],["4 sep 2026",4429.98],["7 sep 2026",4404.3],["8 sep 2026",4355.99],["9 sep 2026",4398.83],["10 sep 2026",4318.19],["11 sep 2026",4349.08],["14 sep 2026",4299.64],["15 sep 2026",4292.15],["16 sep 2026",4263.65],["17 sep 2026",4341.7],["18 sep 2026",4378.63],["21 sep 2026",4343.43],["22 sep 2026",4360.72],["23 sep 2026",4287.65],["24 sep 2026",4275.03],["25 sep 2026",4284.81],["28 sep 2026",4115.71],["29 sep 2026",4182.31],["30 sep 2026",4157.41],["1 oct 2026",4177.66],["2 oct 2026",4141.19],["5 oct 2026",4139.5],["6 oct 2026",4164.18],["7 oct 2026",4111.23],["8 oct 2026",4132.5],["9 oct 2026",4194.24],["12 oct 2026",4172.23],["13 oct 2026",4160.74],["14 oct 2026",4105.37],["15 oct 2026",4171.44],["16 oct 2026",4165.58],["19 oct 2026",4140.72],["20 oct 2026",4125.2],["21 oct 2026",4140.74]],"name":"Cotizaciones internacionales - Oro (Londres, US$ por onzas troy)","code":"PD04704XD","source":"Reuters","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04704XD/json"},{"id":"copper","question":"¿A cuánto está el cobre?","label":"Cobre","keywords":["cobre"],"explain":"Precio internacional del cobre en Londres, en centavos de dólar por libra.","display":"655.03","value":655.032748008661,"decimals":2,"prefix":"","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":false,"text":"2.35%","from":"21 sep 2026"},"points":[["18 jun 2026",617.429940163001],["19 jun 2026",613.733162310864],["22 jun 2026",618.790717286487],["23 jun 2026",604.820072152032],["24 jun 2026",597.902788440979],["25 jun 2026",598.469778909098],["26 jun 2026",602.688187991904],["29 jun 2026",603.391256172372],["30 jun 2026",605.137586814179],["1 jul 2026",597.381157210309],["2 jul 2026",598.832652808694],["3 jul 2026",603.209819222574],["6 jul 2026",603.731450453243],["7 jul 2026",603.686091215794],["8 jul 2026",593.752418214347],["9 jul 2026",605.840654994646],["10 jul 2026",608.199335342022],["13 jul 2026",610.558015689397],["14 jul 2026",614.209434304084],["15 jul 2026",614.027997354286],["16 jul 2026",615.298056002873],["17 jul 2026",606.611762031288],["20 jul 2026",618.201047199643],["21 jul 2026",628.497594100686],["22 jul 2026",630.266604361218],["23 jul 2026",623.462718743789],["24 jul 2026",617.656736350249],["27 jul 2026",626.411069178008],["28 jul 2026",618.858756142661],["29 jul 2026",618.382484149441],["30 jul 2026",625.730680616265],["31 jul 2026",627.499690876797],["3 ago 2026",632.534566233695],["4 ago 2026",643.874375596077],["5 ago 2026",642.626996566215],["6 ago 2026",655.667777332955],["7 ago 2026",645.915541281306],["10 ago 2026",648.183503153782],["11 ago 2026",654.284320590744],["12 ago 2026",652.084397574442],["13 ago 2026",647.956706966535],["14 ago 2026",659.750108703412],["17 ago 2026",673.584676125519],["18 ago 2026",650.224668839011],["19 ago 2026",643.193987034334],["20 ago 2026",642.740394659839],["21 ago 2026",648.228862391232],["24 ago 2026",650.632901976057],["25 ago 2026",654.307000209469],["26 ago 2026",658.842923954422],["27 ago 2026",657.255350643688],["28 ago 2026",659.296516328917],["31 ago 2026",659.296516328917],["1 sep 2026",652.968902704708],["2 sep 2026",651.131853588002],["3 sep 2026",651.3132905378],["4 sep 2026",651.857601387194],["7 sep 2026",659.523312516165],["8 sep 2026",668.459082293722],["9 sep 2026",665.510731859503],["10 sep 2026",652.719426898735],["11 sep 2026",645.847502425132],["14 sep 2026",637.025130741198],["15 sep 2026",637.070489978648],["16 sep 2026",645.325871194462],["17 sep 2026",653.195698891955],["18 sep 2026",659.02436090422],["21 sep 2026",670.772403403648],["22 sep 2026",671.180636540694],["23 sep 2026",668.368363818823],["24 sep 2026",669.729140942309],["25 sep 2026",668.595160006071],["28 sep 2026",659.727429084688],["29 sep 2026",656.552282463221],["30 sep 2026",657.11927293134],["1 oct 2026",650.224668839011],["2 oct 2026",651.131853588002],["5 oct 2026",654.533796396717],["6 oct 2026",657.935739205431],["7 oct 2026",658.162535392679],["8 oct 2026",658.888283191871],["9 oct 2026",666.281838896145],["12 oct 2026",672.314617476932],["13 oct 2026",668.64051924352],["14 oct 2026",669.094111618016],["15 oct 2026",659.477953278715],["16 oct 2026",662.018070575889],["19 oct 2026",657.527506068386],["20 oct 2026",659.523312516165],["21 oct 2026",655.032748008661]],"name":"Cotizaciones internacionales - Cobre (Londres, cUS$ por libras)","code":"PD04701XD","source":"Reuters","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04701XD/json"},{"id":"silver","question":"¿A cuánto está la plata?","label":"Plata","keywords":["plata"],"explain":"Precio internacional de una onza troy de plata, en dólares.","display":"US$ 57.97","value":57.97,"decimals":2,"prefix":"US$ ","suffix":"","when":"21 oct 2026","frequency":"daily","delta":{"up":false,"text":"12.20%","from":"21 sep 2026"},"points":[["18 jun 2026",65.815],["19 jun 2026",64.9],["22 jun 2026",65.1775],["23 jun 2026",61.55],["24 jun 2026",57.435],["25 jun 2026",57.8675],["26 jun 2026",59.16],["29 jun 2026",58.2975],["30 jun 2026",58.575],["1 jul 2026",59.14],["2 jul 2026",61.0075],["3 jul 2026",62.4],["6 jul 2026",62.0775],["7 jul 2026",60.01],["8 jul 2026",58.295],["9 jul 2026",59.99],["10 jul 2026",59.84],["13 jul 2026",57.645],["14 jul 2026",58.625],["15 jul 2026",57.77],["16 jul 2026",55.505],["17 jul 2026",55.9],["20 jul 2026",56.415],["21 jul 2026",58.785],["22 jul 2026",59.705],["23 jul 2026",57.675],["24 jul 2026",58.165],["27 jul 2026",58.405],["28 jul 2026",57.145],["29 jul 2026",57.64],["30 jul 2026",58.985],["31 jul 2026",57.6319],["3 ago 2026",58.18],["4 ago 2026",59.51],["5 ago 2026",62.0778],["6 ago 2026",61.48],["7 ago 2026",63.5516],["10 ago 2026",65.735],["11 ago 2026",64.675],["12 ago 2026",65.3],["13 ago 2026",64.455],["14 ago 2026",64.6569],["17 ago 2026",65.8],["18 ago 2026",63.2993],["19 ago 2026",66.9172],["20 ago 2026",68.0749],["21 ago 2026",68.9675],["24 ago 2026",68.9362],["25 ago 2026",68.6409],["26 ago 2026",68.1004],["27 ago 2026",69.2564],["28 ago 2026",66.3535],["31 ago 2026",66.5202],["1 sep 2026",64.2485],["2 sep 2026",65.3168],["3 sep 2026",66.9526],["4 sep 2026",66.1897],["7 sep 2026",66.14],["8 sep 2026",65.7527],["9 sep 2026",67.2689],["10 sep 2026",63.5485],["11 sep 2026",64.4562],["14 sep 2026",63.2298],["15 sep 2026",63.6452],["16 sep 2026",62.9568],["17 sep 2026",65.1923],["18 sep 2026",66.2324],["21 sep 2026",66.025],["22 sep 2026",67.075],["23 sep 2026",64.465],["24 sep 2026",63.905],["25 sep 2026",64.2805],["28 sep 2026",60.965],["29 sep 2026",61.4515],["30 sep 2026",60.4067],["1 oct 2026",60.8492],["2 oct 2026",60.3917],["5 oct 2026",61.05],["6 oct 2026",61.685],["7 oct 2026",60.145],["8 oct 2026",59.3425],["9 oct 2026",60.8052],["12 oct 2026",60.315],["13 oct 2026",59.4395],["14 oct 2026",55.6375],["15 oct 2026",57.4375],["16 oct 2026",57.0057],["19 oct 2026",57.085],["20 oct 2026",57.98],["21 oct 2026",57.97]],"name":"Cotizaciones internacionales - Plata (H.Harman, US$ por onzas troy)","code":"PD04702XD","source":"Reuters","apiUrl":"https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD04702XD/json"}],"fx":3.43357142857143,"euro":3.871};
+  var T = DATA.topics;
+  var $ = function (id) { return document.getElementById(id); };
+  var esc = function (s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); };
+  var norm = function (s) { return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
+  var fmt = function (n, d) { return n.toLocaleString("es-PE", { minimumFractionDigits: d, maximumFractionDigits: d }); };
+
+  function find(q) {
+    var s = " " + norm(q).replace(/[^a-z0-9$ ]/g, " ").replace(/\s+/g, " ") + " ";
+    var best = null, len = 0;
+    T.forEach(function (t) {
+      t.keywords.forEach(function (k) {
+        if (k.length > len && s.indexOf(" " + k + " ") !== -1) { best = t; len = k.length; }
+      });
+    });
+    return best;
+  }
+
+  function chart(t) {
+    var p = t.points;
+    if (p.length < 2) return "";
+    var W = 600, H = 170, L = 8, R = 8, Tp = 14, B = 22;
+    var vs = p.map(function (x) { return x[1]; });
+    var min = Math.min.apply(null, vs), max = Math.max.apply(null, vs);
+    var span = max - min || 1;
+    var xy = p.map(function (x, i) {
+      return [L + (i / (p.length - 1)) * (W - L - R), Tp + (1 - (x[1] - min) / span) * (H - Tp - B)];
+    });
+    var pts = xy.map(function (c) { return c[0].toFixed(1) + "," + c[1].toFixed(1); }).join(" ");
+    var last = xy[xy.length - 1];
+    var area = L + "," + (H - B) + " " + pts + " " + last[0].toFixed(1) + "," + (H - B);
+    return '<svg class="chart" viewBox="0 0 ' + W + " " + H + '" role="img" aria-label="Gráfico de ' + esc(t.label) + ' desde ' + esc(p[0][0]) + ' hasta ' + esc(p[p.length - 1][0]) + '">' +
+      '<line class="grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + (H - B) + '" y2="' + (H - B) + '"/>' +
+      '<polygon class="area" points="' + area + '"/><polyline class="line" points="' + pts + '"/>' +
+      '<circle class="dot" cx="' + last[0].toFixed(1) + '" cy="' + last[1].toFixed(1) + '" r="4"/>' +
+      '<text x="' + L + '" y="' + (H - 6) + '">' + esc(p[0][0]) + '</text>' +
+      '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + esc(p[p.length - 1][0]) + '</text></svg>' +
+      '<div class="cap"><span>Mínimo: ' + esc(t.prefix + fmt(min, t.decimals) + t.suffix) + '</span><span>Máximo: ' + esc(t.prefix + fmt(max, t.decimals) + t.suffix) + '</span></div>';
+  }
+
+  function quantity(q) {
+    var m = q.replace(/\s/g, "").match(/(\d+(?:[.,]\d+)?)/);
+    return m ? parseFloat(m[1].replace(",", ".")) : null;
+  }
+
+  function show(t, q) {
+    var d = t.delta, dh = "";
+    if (d) dh = '<p class="delta"><b class="' + (d.up ? "up" : "down") + '">' + (d.up ? "▲ Subió " : "▼ Bajó ") + esc(d.text) + "</b> desde " + esc(d.from) + ".</p>";
+    var conv = "";
+    var n = q ? quantity(q) : null;
+    if (n !== null && (t.id === "fx" || t.id === "euro")) {
+      conv = '<p class="conv">' + esc(fmt(n, n % 1 ? 2 : 0)) + (t.id === "fx" ? " dólares" : " euros") + " = <b>S/ " + esc(fmt(n * t.value, 2)) + "</b> al tipo de cambio de " + esc(t.when) + ".</p>";
+    }
+    $("answer").innerHTML =
+      "<h2>" + esc(t.label) + "</h2>" +
+      '<div class="big">' + esc(t.display) + "</div>" +
+      '<p class="when">Dato del ' + esc(t.when) + (t.frequency === "daily" ? " (último día publicado)" : " (último dato publicado)") + "</p>" + dh + conv +
+      '<p class="explain">' + esc(t.explain) + "</p>" +
+      '<div class="chartbox">' + chart(t) + "</div>" +
+      '<p class="source">Fuente: ' + esc(t.source) + ' · serie <a href="' + esc(t.apiUrl) + '">' + esc(t.code) + '</a> · <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">Ver en BCRPData</a><br>' + esc(t.name) + "</p>";
+    document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.id === t.id)); });
+  }
+
+  function notFound(q) {
+    $("answer").innerHTML = '<div class="empty"><h2>Sin dato</h2><p>No tengo ese dato. Esta página solo contesta con datos del Banco Central: dólar, euro, inflación, tasa de interés, reservas, PBI, desempleo, oro, cobre y plata. No es un asistente general ni calcula operaciones. Prueba con una de las preguntas de arriba, o busca más series en <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>.</p></div>';
+    document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
+  }
+
+  $("chips").innerHTML = T.map(function (t) { return '<button type="button" class="chip" data-id="' + esc(t.id) + '" aria-pressed="false">' + esc(t.question) + "</button>"; }).join("");
+  $("chips").addEventListener("click", function (e) {
+    var b = e.target.closest(".chip");
+    if (!b) return;
+    var t = T.filter(function (x) { return x.id === b.dataset.id; })[0];
+    $("q").value = t.question;
+    show(t, "");
+  });
+  $("ask").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var q = $("q").value.trim();
+    if (!q) return;
+    var t = find(q);
+    t ? show(t, q) : notFound(q);
+  });
+
+  // calculator
+  var rates = { fx: T.filter(function (x) { return x.id === "fx"; })[0], euro: T.filter(function (x) { return x.id === "euro"; })[0] };
+  function calc() {
+    var r = rates[$("cur").value], n = parseFloat($("amt").value);
+    $("out").textContent = isFinite(n) && n >= 0 ? "S/ " + fmt(n * r.value, 2) : "—";
+    $("convnote").textContent = "Con el tipo de cambio interbancario de venta del " + r.when + " (S/ " + fmt(r.value, r.decimals) + "). Tu banco o casa de cambio puede aplicar otro.";
+  }
+  $("amt").addEventListener("input", calc);
+  $("cur").addEventListener("change", calc);
+  calc();
+
+  show(T[0], "");
+})();
+</script>
+</body>
+</html>

@@ -8,6 +8,8 @@ on:
     paths:
       - "docs/**"
       - "scripts/build-demo.ts"
+      - "scripts/build-ask.ts"
+      - "scripts/ask.template.html"
       - "scripts/demo.template.html"
       - ".github/workflows/pages.yml"
   schedule:
@@ -36,7 +38,7 @@ jobs:
       - name: Refresh the data
         id: refresh
         continue-on-error: true
-        run: bun run demo
+        run: bun run demo && sleep 2 && bun run ask
       - name: Warn when the snapshot is stale
         if: steps.refresh.outcome == 'failure'
         run: echo "::warning::Could not refresh the data from the BCRP; deploying the committed snapshot."

@@ -45,6 +45,7 @@
     "build": "bun build src/cli.ts --target node --outfile dist/cli.js",
     "catalog": "bun scripts/build-catalog.ts",
     "demo": "bun scripts/build-demo.ts",
+    "ask": "bun scripts/build-ask.ts",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run typecheck && bun test && bun run build"

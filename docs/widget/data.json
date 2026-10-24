@@ -81,34 +81,34 @@
   {
    "id": "gold",
    "label": "Oro",
-   "display": "US$ 4,140.74",
-   "when": "21 oct 2026",
+   "display": "US$ 4,024.85",
+   "when": "22 oct 2026",
    "delta": {
     "up": false,
-    "text": "4.67%",
-    "from": "21 sep 2026"
+    "text": "7.70%",
+    "from": "22 sep 2026"
    }
   },
   {
    "id": "copper",
    "label": "Cobre",
-   "display": "655.03",
-   "when": "21 oct 2026",
+   "display": "644.78",
+   "when": "22 oct 2026",
    "delta": {
     "up": false,
-    "text": "2.35%",
-    "from": "21 sep 2026"
+    "text": "3.93%",
+    "from": "22 sep 2026"
    }
   },
   {
    "id": "silver",
    "label": "Plata",
-   "display": "US$ 57.97",
-   "when": "21 oct 2026",
+   "display": "US$ 54.53",
+   "when": "22 oct 2026",
    "delta": {
     "up": false,
-    "text": "12.20%",
-    "from": "21 sep 2026"
+    "text": "18.71%",
+    "from": "22 sep 2026"
    }
   }
  ]

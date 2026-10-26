@@ -238,7 +238,8 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
       </div>
     </div>
     <div class="actions">
-      <button class="go" id="go" type="button">Descargar Excel (CSV) ↓</button>
+      <button class="go" id="go" type="button">Descargar Excel ↓</button>
+      <button class="ghost" id="csv" type="button">Descargar CSV</button>
       <button class="ghost" id="copy" type="button">Copiar enlace</button>
       <span class="status" id="status" role="status"></span>
     </div>
@@ -246,7 +247,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
 </main>
 
 <footer>
-  <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>; la lista de series se actualiza cada semana. El archivo se abre con doble clic en Excel; las fechas salen como año-mes-día.</p>
+  <p>Proyecto no oficial, sin relación con el BCRP. Los datos vienen de la API pública de <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>; la lista de series se actualiza cada semana. El Excel trae las fechas como fechas reales y una hoja «Fuente» para citarlo; el CSV sirve si prefieres otro programa.</p>
   <p>Hecho por <a href="https://github.com/LizethRiveros">Lizeth Riveros</a> en <a href="https://crafter.ing">Crafter Station</a> · <a href="https://github.com/LizethRiveros/bcrp-cli">código abierto</a>.</p>
 </footer>
 
@@ -363,8 +364,9 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     }
   }
 
-  function url() {
+  function url(fmt) {
     var p = new URLSearchParams({ codes: picked.join(",") });
+    if (fmt) p.set("formato", fmt);
     if ($("from").value) p.set("desde", $("from").value);
     if ($("to").value) p.set("hasta", $("to").value);
     return API + "/api/serie?" + p.toString();
@@ -399,13 +401,12 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
   $("more").addEventListener("click", function () { render(true); });
   document.querySelector(".quick").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b && picked.length) setRange(b.dataset.r); });
 
-  $("go").addEventListener("click", function () {
-    var btn = $("go");
+  function download(btn, fmt) {
     btn.disabled = true;
     setStatus("Preparando tu archivo…");
-    fetch(url()).then(function (r) {
+    fetch(url(fmt)).then(function (r) {
       if (!r.ok) return r.text().then(function (t) { throw new Error(t || "No se pudo preparar la descarga."); });
-      var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "bcrp.csv";
+      var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "bcrp." + (fmt || "xlsx");
       return r.blob().then(function (b) {
         var a = document.createElement("a");
         a.href = URL.createObjectURL(b);
@@ -419,7 +420,9 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     }).catch(function (e) {
       setStatus(e instanceof TypeError ? "No pude conectar con el servidor de descargas. Revisa tu internet e inténtalo de nuevo." : e.message, true);
     }).then(function () { btn.disabled = false; });
-  });
+  }
+  $("go").addEventListener("click", function () { download($("go"), "xlsx"); });
+  $("csv").addEventListener("click", function () { download($("csv"), "csv"); });
   $("copy").addEventListener("click", function () {
     var u = url();
     (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { setStatus("Enlace copiado: al abrirlo se descarga el archivo."); }, function () { setStatus(u); });

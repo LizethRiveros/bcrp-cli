@@ -117,11 +117,11 @@
    "id": "rate",
    "label": "Tasa de referencia",
    "display": "4.25%",
-   "when": "23 oct 2026",
+   "when": "26 oct 2026",
    "delta": {
     "up": false,
     "text": "0.00 puntos",
-    "from": "23 sep 2026"
+    "from": "25 sep 2026"
    },
    "spark": [
     4.25,
@@ -159,15 +159,14 @@
   {
    "id": "reserves",
    "label": "Reservas internacionales netas",
-   "display": "US$ 96,692",
-   "when": "22 oct 2026",
+   "display": "US$ 96,396",
+   "when": "23 oct 2026",
    "delta": {
     "up": false,
-    "text": "0.26%",
-    "from": "22 sep 2026"
+    "text": "0.64%",
+    "from": "23 sep 2026"
    },
    "spark": [
-    97929,
     98123.56226673,
     97798.45458647,
     97683.30618227,
@@ -196,7 +195,8 @@
     96371.954121,
     96380.43831941,
     96754.53818488,
-    96692.46397828
+    96692.46397828,
+    96396.45009495
    ]
   },
   {

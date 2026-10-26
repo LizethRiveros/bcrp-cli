@@ -217,12 +217,14 @@ const widgetTopics = (topics as Record<string, unknown>[]).map((t) => ({
 const widgetTemplate = readFileSync(join(here, "widget.template.html"), "utf8");
 const widgetDir = join(here, "..", "docs", "widget");
 mkdirSync(widgetDir, { recursive: true });
+const checked = formatPeriod(new Date(Date.now() - 5 * 3600e3).toISOString().slice(0, 10)); // Lima date
 const updated = formatPeriod(fxPeriod || new Date().toISOString().slice(0, 10));
 writeFileSync(
   join(widgetDir, "index.html"),
   widgetTemplate
     .replace("{{DATA}}", () => JSON.stringify(widgetTopics).replace(/</g, "\u003c"))
-    .replace("{{UPDATED}}", updated),
+    .replace("{{UPDATED}}", updated)
+    .replace("{{CHECKED}}", checked),
 );
-writeFileSync(join(widgetDir, "data.json"), JSON.stringify({ updated, topics: widgetTopics }, null, 1));
+writeFileSync(join(widgetDir, "data.json"), JSON.stringify({ updated, checked, topics: widgetTopics }, null, 1));
 console.log("wrote docs/widget/index.html and data.json");

@@ -13,6 +13,7 @@ on:
       - "scripts/demo.template.html"
       - ".github/workflows/pages.yml"
   schedule:
+    - cron: "30 14 * * 1-5" # weekdays, 9:30 am in Lima (the BCRP publishes the day's figures in the morning)
     - cron: "0 23 * * 1-5" # weekdays, 6 pm in Lima
   workflow_dispatch:
 

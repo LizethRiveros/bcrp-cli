@@ -209,6 +209,7 @@ console.log(`\nwrote docs/preguntar/index.html (${html.length} bytes)`);
 // Phone widget: compact tiles for the home screen (docs/widget/) and a JSON feed for Scriptable (docs/widget/data.json).
 const widgetTopics = (topics as Record<string, unknown>[]).map((t) => ({
   id: t.id, label: t.label, display: t.display, when: t.when, delta: t.delta,
+  spark: (t.points as [string, number][]).slice(-((t.frequency as string)?.toLowerCase().startsWith("d") ? 30 : 12)).map((p) => p[1]),
 }));
 const widgetTemplate = readFileSync(join(here, "widget.template.html"), "utf8");
 const widgetDir = join(here, "..", "docs", "widget");

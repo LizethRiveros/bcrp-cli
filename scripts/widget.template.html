@@ -4,56 +4,91 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BCRP</title>
-<meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#14181a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#14181a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BCRP">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root { color-scheme: light dark; --bg: #f6f1e7; --card: #fffdf8; --fg: #231f18; --muted: #6b6354; --line: #2a221412; --up: #a8531a; --down: #2f6b3f; }
-@media (prefers-color-scheme: dark) { :root { --bg: #14181a; --card: #1b2022; --fg: #f4f2ea; --muted: #a9aea6; --line: #ffffff18; --up: #f0b070; --down: #8fd19e; } }
+/* Siempre oscuro: la foto de la sede del BCRP al fondo, tarjetas de vidrio encima. */
+:root { --fg: #f6f2e8; --muted: #c9c6bb; --glass: rgb(20 24 26 / .52); --edge: rgb(255 255 255 / .16); --up: #ffb877; --down: #9be0ab; --gold: #f0b070;
+  --serif: "Fraunces", ui-serif, Georgia, serif; --sans: "Inter", ui-sans-serif, system-ui, sans-serif; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: var(--bg); color: var(--fg); font: 16px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  min-height: 100dvh; padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom)); }
+html { background: #14181a; }
+body { color: var(--fg); font: 15px/1.4 var(--sans); min-height: 100dvh; position: relative;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); }
+body::before { content: ""; position: fixed; inset: 0; z-index: -2; background: url(../preguntar/bcrp-sede.jpg) center 30% / cover; transform: scale(1.06); }
+body::after { content: ""; position: fixed; inset: 0; z-index: -1;
+  background: linear-gradient(180deg, rgb(10 12 13 / .55), rgb(10 12 13 / .35) 40%, rgb(10 12 13 / .85)); }
 main { max-width: 420px; margin: 0 auto; }
+header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; padding: 0 4px; }
+header b { font: 600 13px var(--sans); letter-spacing: .14em; color: var(--gold); }
+header span { font-size: 12px; color: var(--muted); }
 .grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
-.tile { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 16px; aspect-ratio: 1; display: flex; flex-direction: column; justify-content: space-between; }
-.label { font-size: 13px; color: var(--muted); font-weight: 500; }
-.value { font: 600 clamp(26px, 8vw, 34px)/1.05 ui-serif, Georgia, serif; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
-.delta { font-size: 13px; font-weight: 500; }
-.delta { color: var(--muted); } .delta.up { color: var(--up); } .delta.down { color: var(--down); }
-.when { font-size: 12px; color: var(--muted); }
-footer { margin-top: 16px; font-size: 12px; color: var(--muted); text-align: center; }
+.tile { position: relative; overflow: hidden; border-radius: 24px; padding: 16px 16px 12px; min-height: 188px;
+  background: linear-gradient(160deg, rgb(255 255 255 / .12), rgb(255 255 255 / .03)), var(--glass);
+  border: 1px solid var(--edge); box-shadow: 0 10px 30px rgb(0 0 0 / .28), inset 0 1px 0 rgb(255 255 255 / .12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
+  display: flex; flex-direction: column; opacity: 0; transform: translateY(14px); animation: in .7s cubic-bezier(.22,1,.36,1) forwards; }
+.tile.hero { grid-column: 1 / -1; min-height: 210px; }
+@keyframes in { to { opacity: 1; transform: none; } }
+.label { font-size: 12px; font-weight: 500; letter-spacing: .04em; color: var(--muted); text-transform: uppercase; }
+.value { white-space: nowrap; font: 600 25px/1.1 var(--serif); letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 8px; }
+.hero .value { font-size: 52px; }
+.delta { display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: rgb(255 255 255 / .1); color: var(--muted); }
+.delta.up { color: var(--up); background: rgb(255 184 119 / .14); } .delta.down { color: var(--down); background: rgb(155 224 171 / .14); }
+.when { font-size: 11px; color: var(--muted); margin-top: auto; padding-top: 6px; opacity: .85; }
+svg.spark { position: absolute; left: 0; right: 0; bottom: 26px; width: 100%; height: 38px; pointer-events: none; }
+.hero svg.spark { height: 78px; bottom: 26px; }
+svg.spark path.line { fill: none; stroke: var(--gold); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1.4s .35s cubic-bezier(.22,1,.36,1) forwards; }
+svg.spark path.area { fill: url(#g); opacity: 0; animation: fade 1s .9s forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } } @keyframes fade { to { opacity: 1; } }
+footer { margin-top: 18px; font-size: 12px; color: var(--muted); text-align: center; }
 footer a { color: inherit; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .01s !important; animation-delay: 0s !important; } }
 </style>
 </head>
 <body>
 <main>
+  <header><b>BCRP</b><span>al {{UPDATED}}</span></header>
   <div class="grid" id="grid"></div>
-  <footer>Fuente: BCRP · actualizado al {{UPDATED}}<br><a href="../preguntar/">Pregúntale al BCRP</a></footer>
+  <footer>Fuente: BCRP · <a href="../preguntar/">Pregúntale al BCRP</a></footer>
 </main>
+<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b070" stop-opacity=".38"/><stop offset="1" stop-color="#f0b070" stop-opacity="0"/></linearGradient></defs></svg>
 <script>
 const DATA = {{DATA}};
-// ?t=fx,euro,gold chooses and orders the tiles (2, 4 or 6 look best)
-const ids = (new URLSearchParams(location.search).get("t") || "fx,euro,inflation,rate").split(",");
+// ?t=fx,euro,gold elige y ordena las fichas; la primera se muestra grande
+const ids = (new URLSearchParams(location.search).get("t") || "fx,euro,inflation,rate,gold").split(",");
 const grid = document.getElementById("grid");
-for (const id of ids) {
+function spark(v) {
+  if (!v || v.length < 2) return "";
+  const lo = Math.min(...v), hi = Math.max(...v), r = hi - lo || 1;
+  const pts = v.map((y, i) => [(i / (v.length - 1)) * 100, 4 + (1 - (y - lo) / r) * 32]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" ");
+  return '<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="area" d="' + line + ' L100 40 L0 40 Z"/><path class="line" pathLength="1" d="' + line + '"/></svg>';
+}
+ids.forEach((id, i) => {
   const t = DATA.find((x) => x.id === id);
-  if (!t) continue;
+  if (!t) return;
   const el = document.createElement("div");
-  el.className = "tile";
+  el.className = "tile" + (i === 0 ? " hero" : "");
+  el.style.animationDelay = i * 90 + "ms";
   const d = t.delta;
   const flat = d && parseFloat(d.text) === 0;
-  const arrow = !d ? "" : flat ? '<div class="delta">sin cambio</div>' : '<div class="delta ' + (d.up ? "up" : "down") + '">' + (d.up ? "▲ " : "▼ ") + d.text + "</div>";
-  el.innerHTML = '<div class="label"></div><div><div class="value"></div>' + arrow + '</div><div class="when"></div>';
+  const chip = !d ? "" : flat ? '<span class="delta">sin cambio</span>' : '<span class="delta ' + (d.up ? "up" : "down") + '">' + (d.up ? "▲ " : "▼ ") + d.text + "</span>";
+  el.innerHTML = '<div class="label"></div><div class="value"></div><div>' + chip + "</div>" + spark(t.spark) + '<div class="when"></div>';
   el.querySelector(".label").textContent = t.label;
   el.querySelector(".value").textContent = t.display;
   el.querySelector(".when").textContent = t.when;
   grid.appendChild(el);
-}
+});
 </script>
 </body>
 </html>

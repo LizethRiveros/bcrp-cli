@@ -149,9 +149,11 @@ let eurRate = 0;
 let fxPeriod = "";
 
 for (const t of TOPICS) {
-  const series = await getSeries({ series: t.key, last: t.last });
-  const obs = series.points.filter((p): p is { period: string; value: number } => p.value !== null);
-  const latest = obs[obs.length - 1];
+  // Download history is longer than the chart: ~2 years of daily data, ~10 years of monthly.
+  const series = await getSeries({ series: t.key, last: t.last > 30 ? 730 : 120 });
+  const all = series.points.filter((p): p is { period: string; value: number } => p.value !== null);
+  const obs = all.slice(-t.last);
+  const latest = all[all.length - 1];
   if (!latest) throw new Error(`no data for ${t.key}`);
   if (t.key === "fx") {
     fxRate = latest.value;
@@ -184,6 +186,7 @@ for (const t of TOPICS) {
     frequency: series.frequency,
     delta,
     points: obs.map((o) => [formatPeriod(o.period), o.value]),
+    rows: all.map((o) => [o.period, o.value]),
     name: series.name,
     code: series.code,
     source: series.source ?? "BCRP",

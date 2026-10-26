@@ -132,6 +132,8 @@ svg.chart .pt { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
 svg.chart .tipline { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
 svg.chart .tipbg { fill: var(--foreground); } svg.chart .tiptxt { fill: var(--background); font-weight: 500; }
 svg.chart { touch-action: pan-y; cursor: crosshair; }
+.btns { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: flex-end; }
+button.btn { cursor: pointer; font: inherit; }
 .source { margin-top: 1rem; display: flex; flex-wrap: wrap; gap: .2rem .9rem; font: 400 10.5px/1.6 var(--mono); letter-spacing: -.01em; color: var(--muted-foreground); }
 .bridge { margin-top: 1.25rem; padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; background: oklch(.5 0 0 / .05); }
 .bridge > div { flex: 1 1 12rem; } .bridge p:last-child { font-size: .85rem; color: var(--muted-foreground); }
@@ -331,7 +333,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     }
     put(
       '<div class="headrow"><div><p class="eyebrow">Dato oficial · ' + (t.frequency === "daily" ? "diario" : t.frequency === "monthly" ? "mensual" : esc(t.frequency)) + "</p>" +
-      "<h2>" + esc(t.label) + '</h2></div><a class="btn" href="https://estadisticas.bcrp.gob.pe/estadisticas/series/" target="_blank" rel="noreferrer">Ver en BCRPData ↗</a></div>' +
+      "<h2>" + esc(t.label) + '</h2></div><div class="btns"><button type="button" class="btn dl" data-id="' + esc(t.id) + '">Descargar para Excel ↓</button><a class="btn" href="https://estadisticas.bcrp.gob.pe/estadisticas/series/" target="_blank" rel="noreferrer">Ver en BCRPData ↗</a></div></div>' +
       '<div class="big">' + esc(t.display) + "</div>" +
       '<p class="when">Dato del ' + esc(t.when) + (t.frequency === "daily" ? " (último día publicado)" : " (último dato publicado)") + "</p>" + dh + conv +
       '<p class="explain">' + esc(t.explain) + "</p>" +
@@ -340,7 +342,21 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
       '<div class="bridge"><div><p class="eyebrow">Para programadores</p><p>El mismo dato, en tu terminal o en tu IA.</p></div><code>npx @lizethriveros/bcrp-cli ' + esc(t.id) + '</code><a class="btn" href="../">Ver la versión técnica →</a></div>'
     );
     bindChart();
+    var dl = document.querySelector(".dl");
+    if (dl) dl.addEventListener("click", function () { download(t); });
     document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", String(c.dataset.id === t.id)); });
+  }
+
+  // CSV with a BOM so Excel opens accents correctly; dates as yyyy-mm-dd, the way Excel reads them.
+  function download(t) {
+    var lines = ["Fecha," + JSON.stringify(t.name)].concat(t.rows.map(function (r) { return r[0] + "," + r[1]; }));
+    var blob = new Blob(["﻿" + lines.join("
+")], { type: "text/csv;charset=utf-8" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "bcrp-" + t.id + ".csv";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
   }
 
   function notFound(q) {

@@ -167,6 +167,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     <span>bcrp</span>
   </a>
   <nav>
+    <a href="../series/">Buscar series</a>
     <a href="../" class="hide-sm">Para programadores</a>
     <button class="theme" type="button" id="theme" aria-label="Cambiar tema">Tema</button>
     <a href="https://crafter.ing" target="_blank" rel="noreferrer" class="hide-sm">Crafter Station</a>
@@ -333,7 +334,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
     }
     put(
       '<div class="headrow"><div><p class="eyebrow">Dato oficial · ' + (t.frequency === "daily" ? "diario" : t.frequency === "monthly" ? "mensual" : esc(t.frequency)) + "</p>" +
-      "<h2>" + esc(t.label) + '</h2></div><div class="btns"><button type="button" class="btn dl" data-id="' + esc(t.id) + '">Descargar para Excel ↓</button><a class="btn" href="https://estadisticas.bcrp.gob.pe/estadisticas/series/" target="_blank" rel="noreferrer">Ver en BCRPData ↗</a></div></div>' +
+      "<h2>" + esc(t.label) + '</h2></div><div class="btns"><button type="button" class="btn dl" data-id="' + esc(t.id) + '">Descargar para Excel ↓</button><a class="btn" href="../series/">Buscar otras series</a><a class="btn" href="https://estadisticas.bcrp.gob.pe/estadisticas/series/" target="_blank" rel="noreferrer">Ver en BCRPData ↗</a></div></div>' +
       '<div class="big">' + esc(t.display) + "</div>" +
       '<p class="when">Dato del ' + esc(t.when) + (t.frequency === "daily" ? " (último día publicado)" : " (último dato publicado)") + "</p>" + dh + conv +
       '<p class="explain">' + esc(t.explain) + "</p>" +
@@ -350,7 +351,8 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
   // CSV with a BOM so Excel opens accents correctly; dates as yyyy-mm-dd, the way Excel reads them.
   function download(t) {
     var lines = ["Fecha," + JSON.stringify(t.name)].concat(t.rows.map(function (r) { return r[0] + "," + r[1]; }));
-    var blob = new Blob(["﻿" + lines.join("
+    var blob = new Blob(["﻿" + lines.join("
+
 ")], { type: "text/csv;charset=utf-8" });
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -360,7 +362,7 @@ try { var th = localStorage.getItem("bcrp-theme"); if (th === "light" || th === 
   }
 
   function notFound(q) {
-    put('<div class="empty"><p class="eyebrow">Sin dato</p><h2>No tengo ese dato</h2><p>Esta página solo contesta con datos del BCRP: dólar, euro, inflación, tasa de interés, reservas, PBI, desempleo, oro, cobre y plata. No es un asistente general ni calcula operaciones. Prueba con una de las preguntas de arriba, o busca más series en <a href="https://estadisticas.bcrp.gob.pe/estadisticas/series/">BCRPData</a>.</p></div>');
+    put('<div class="empty"><p class="eyebrow">Sin dato</p><h2>No tengo ese dato</h2><p>Esta página solo contesta con datos del BCRP: dólar, euro, inflación, tasa de interés, reservas, PBI, desempleo, oro, cobre y plata. No es un asistente general ni calcula operaciones. Prueba con una de las preguntas de arriba, o <a href="../series/">busca entre más de 17 mil series y descárgalas en Excel</a>.</p></div>');
     document.querySelectorAll(".chip").forEach(function (c) { c.setAttribute("aria-pressed", "false"); });
   }
 

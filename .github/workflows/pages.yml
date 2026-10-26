@@ -10,6 +10,9 @@ on:
       - "scripts/build-demo.ts"
       - "scripts/build-ask.ts"
       - "scripts/ask.template.html"
+      - "scripts/build-series.ts"
+      - "scripts/series.template.html"
+      - "api/**"
       - "scripts/demo.template.html"
       - ".github/workflows/pages.yml"
   schedule:
@@ -39,7 +42,7 @@ jobs:
       - name: Refresh the data
         id: refresh
         continue-on-error: true
-        run: bun run demo && sleep 2 && bun run ask
+        run: bun run demo && sleep 2 && bun run ask && bun run series
       - name: Warn when the snapshot is stale
         if: steps.refresh.outcome == 'failure'
         run: echo "::warning::Could not refresh the data from the BCRP; deploying the committed snapshot."

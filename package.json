@@ -46,6 +46,8 @@
     "catalog": "bun scripts/build-catalog.ts",
     "demo": "bun scripts/build-demo.ts",
     "ask": "bun scripts/build-ask.ts",
+    "series": "bun scripts/build-series.ts",
+    "api": "bun build api-src/serie.ts --target node --format esm --outfile api/serie.js",
     "test": "bun test",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "bun run typecheck && bun test && bun run build"

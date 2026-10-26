@@ -176,7 +176,7 @@ export function normalizeText(s: string): string {
 }
 
 /** English -> Spanish terms so agents (and people) can search in either language. */
-const SYNONYMS: Record<string, string> = {
+export const SYNONYMS: Record<string, string> = {
   inflation: "inflacion",
   exchange: "cambio",
   fx: "cambio",
@@ -215,7 +215,7 @@ const SYNONYMS: Record<string, string> = {
 };
 
 /** Filler words dropped from queries (unless that would leave nothing to search for). */
-const STOPWORDS = new Set([
+export const STOPWORDS = new Set([
   "the", "of", "in", "for", "and", "de", "del", "la", "el", "los", "las", "en", "y", "por", "per",
   "rate", "rates", "index",
 ]);
@@ -224,7 +224,7 @@ const STOPWORDS = new Set([
  * Headline indicators (the shortcuts) rank above look-alikes when they match; among them, the order of SHORTCUTS
  * decides (fx first), so "tipo de cambio" finds the dollar before the euro.
  */
-const HEADLINE = new Map(Object.values(SHORTCUTS).map((s, i, all) => [s.code, 4 + (all.length - i) / 100]));
+export const HEADLINE = new Map(Object.values(SHORTCUTS).map((s, i, all) => [s.code, 4 + (all.length - i) / 100]));
 
 interface Indexed {
   /** Lowercased, accent-free, punctuation replaced by spaces and padded with spaces: word-prefix matching is ` ${token}`. */

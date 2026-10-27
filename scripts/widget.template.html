@@ -38,7 +38,19 @@ body::after { content: ""; position: fixed; inset: 0; z-index: -1;
 main { max-width: 420px; margin: 0 auto; }
 header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; padding: 0 4px; }
 header b { font: 600 13px var(--sans); letter-spacing: .14em; color: var(--gold); }
-header span { font-size: 12px; color: var(--muted); }
+header span { font-size: 12px; color: var(--muted); margin-right: auto; margin-left: 10px; }
+header button { font: 500 12px var(--sans); color: var(--fg); background: rgb(255 255 255 / .12); border: 1px solid var(--edge); border-radius: 99px; padding: 6px 13px; cursor: pointer; }
+#panel { margin-bottom: 12px; padding: 14px; border-radius: 22px; background: var(--glass); border: 1px solid var(--edge);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); animation: in .4s cubic-bezier(.22,1,.36,1) forwards; }
+#panel[hidden] { display: none; }
+.ptitle { font: 600 14px var(--sans); margin-bottom: 10px; }
+.seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 4px; border-radius: 99px; background: rgb(255 255 255 / .08); }
+.seg button { font: 500 13px var(--sans); color: var(--muted); background: transparent; border: 0; border-radius: 99px; padding: 8px 4px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--gold); color: #231f18; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.opts button { font: 400 13px var(--sans); color: var(--fg); background: transparent; border: 1px solid var(--edge); border-radius: 99px; padding: 7px 12px; cursor: pointer; }
+.opts button[aria-pressed="true"] { border-color: var(--gold); background: rgb(240 176 112 / .16); }
+.hint { margin-top: 10px; font-size: 12px; color: var(--muted); }
 .grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
 .tile { position: relative; overflow: hidden; border-radius: 24px; padding: 16px 16px 12px; min-height: 188px;
   background: linear-gradient(160deg, rgb(255 255 255 / .12), rgb(255 255 255 / .03)), var(--glass);
@@ -66,16 +78,33 @@ footer a { color: inherit; }
 </head>
 <body>
 <main>
-  <header><b>BCRP</b><span>al {{UPDATED}}</span></header>
+  <header><b>BCRP</b><span>al {{UPDATED}}</span><button type="button" id="pick" aria-expanded="false" aria-controls="panel">Elegir</button></header>
+  <section id="panel" hidden>
+    <p class="ptitle">¿Qué quieres ver?</p>
+    <div class="seg" role="group" aria-label="Cuántos indicadores">
+      <button type="button" data-mode="uno">Solo uno</button><button type="button" data-mode="varios">Varios</button><button type="button" data-mode="todos">Todos</button>
+    </div>
+    <div class="opts" id="opts"></div>
+    <p class="hint" id="hint"></p>
+  </section>
   <div class="grid" id="grid"></div>
   <footer>Fuente: BCRP · revisado el {{CHECKED}} · <a href="../preguntar/">Pregúntale al BCRP</a></footer>
 </main>
 <svg width="0" height="0" style="position:absolute"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b070" stop-opacity=".38"/><stop offset="1" stop-color="#f0b070" stop-opacity="0"/></linearGradient></defs></svg>
 <script>
 const DATA = {{DATA}};
-// ?t=fx,euro,gold elige y ordena las fichas; la primera se muestra grande
-const ids = (new URLSearchParams(location.search).get("t") || "fx,euro,inflation,rate,gold").split(",");
+// Por defecto solo el dólar, para no llenar la pantalla. Cada persona elige y su elección se recuerda en su teléfono.
+// ?t=fx,euro,gold fuerza una selección (sirve para compartir un enlace); la primera ficha se muestra grande.
 const grid = document.getElementById("grid");
+const ALL = DATA.map((t) => t.id);
+const KEY = "bcrp-widget";
+const DEF = { mode: "uno", uno: "fx", varios: ["fx", "euro", "inflation"] };
+let st = { ...DEF };
+try { st = { ...DEF, ...JSON.parse(localStorage.getItem(KEY) || "{}") }; } catch (e) {}
+const forced = (new URLSearchParams(location.search).get("t") || "").split(",").filter((id) => ALL.includes(id));
+if (forced.length) st = { mode: forced.length === 1 ? "uno" : "varios", uno: forced[0], varios: forced };
+const ids = () => (st.mode === "todos" ? ALL : st.mode === "uno" ? [st.uno] : st.varios);
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} };
 function spark(v) {
   if (!v || v.length < 2) return "";
   const lo = Math.min(...v), hi = Math.max(...v), r = hi - lo || 1;
@@ -83,7 +112,9 @@ function spark(v) {
   const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(2) + " " + p[1].toFixed(2)).join(" ");
   return '<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><path class="area" d="' + line + ' L100 40 L0 40 Z"/><path class="line" pathLength="1" d="' + line + '"/></svg>';
 }
-ids.forEach((id, i) => {
+function render() {
+  grid.innerHTML = "";
+  ids().forEach((id, i) => {
   const t = DATA.find((x) => x.id === id);
   if (!t) return;
   const el = document.createElement("div");
@@ -97,7 +128,52 @@ ids.forEach((id, i) => {
   el.querySelector(".value").textContent = t.display;
   el.querySelector(".when").textContent = t.when;
   grid.appendChild(el);
+  });
+}
+
+const panel = document.getElementById("panel");
+const opts = document.getElementById("opts");
+function renderPanel() {
+  document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.mode === st.mode)));
+  opts.hidden = st.mode === "todos";
+  opts.innerHTML = "";
+  if (st.mode !== "todos") {
+    DATA.forEach((t) => {
+      const on = st.mode === "uno" ? st.uno === t.id : st.varios.includes(t.id);
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.id = t.id;
+      b.setAttribute("aria-pressed", String(on));
+      b.textContent = t.label;
+      opts.appendChild(b);
+    });
+  }
+  document.getElementById("hint").textContent =
+    st.mode === "uno" ? "Se muestra una sola ficha, grande." : st.mode === "varios" ? "Toca para sumar o quitar. Mínimo una." : "Se muestran los " + ALL.length + " indicadores.";
+}
+document.getElementById("pick").addEventListener("click", (e) => {
+  panel.hidden = !panel.hidden;
+  e.currentTarget.setAttribute("aria-expanded", String(!panel.hidden));
+  e.currentTarget.textContent = panel.hidden ? "Elegir" : "Listo";
 });
+document.querySelector(".seg").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  st.mode = b.dataset.mode;
+  if (st.mode === "uno" && !ALL.includes(st.uno)) st.uno = "fx";
+  save(); renderPanel(); render();
+});
+opts.addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  const id = b.dataset.id;
+  if (st.mode === "uno") st.uno = id;
+  else if (st.varios.includes(id)) { if (st.varios.length > 1) st.varios = st.varios.filter((x) => x !== id); }
+  else st.varios = [...st.varios, id];
+  save(); renderPanel(); render();
+});
+renderPanel();
+render();
 </script>
 </body>
 </html>

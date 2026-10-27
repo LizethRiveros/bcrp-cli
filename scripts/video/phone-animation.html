@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,600;1,9..144,300&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:oklch(0.972 0.012 85);--fg:oklch(0.22 0.02 60);--muted:oklch(0.42 0.02 60);--accent:oklch(0.46 0.12 150);--terra:oklch(0.55 0.13 45)}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1080px;height:1920px;overflow:hidden;background:var(--bg)}
+body{font-family:Inter,sans-serif;color:var(--fg);-webkit-font-smoothing:antialiased}
+#stage{position:relative;width:1080px;height:1920px;overflow:hidden}
+.abs{position:absolute}
+#bgimg{position:absolute;inset:-6%;width:112%;height:112%;object-fit:cover;object-position:50% 40%;filter:brightness(1.05) saturate(1.08) sepia(.12)}
+#vig{inset:0;background:linear-gradient(to bottom,oklch(0.972 0.012 85 / .72),oklch(0.972 0.012 85 / .55) 45%,oklch(0.972 0.012 85 / .93))}
+#brand{left:72px;top:84px;display:flex;align-items:center;gap:18px;font:500 34px Inter;letter-spacing:.02em}
+#eyebrow{left:0;width:1080px;top:190px;text-align:center;font:500 24px 'JetBrains Mono';letter-spacing:.16em;text-transform:uppercase;color:var(--accent);height:34px}
+#cap{left:60px;width:960px;top:240px;text-align:center;font:300 96px/1.08 Fraunces;letter-spacing:-.02em;height:210px}
+#cap .ac{color:var(--accent);font-style:italic}
+.cur{display:inline-block;width:.4em;height:.8em;background:var(--accent);vertical-align:-.08em;margin-left:4px}
+
+/* phone */
+#phone{left:210px;top:500px;width:660px;height:1340px;border-radius:104px;background:#0b0e10;box-shadow:0 60px 120px -40px rgba(30,25,15,.55),0 0 0 3px #2a2f33 inset,0 0 0 1.5px #000}
+#screen{position:absolute;left:18px;top:18px;width:624px;height:1304px;border-radius:86px;overflow:hidden;background:#111}
+#ui{position:absolute;left:0;top:0;width:390px;height:815px;transform:scale(1.6);transform-origin:0 0;overflow:hidden}
+#notch{position:absolute;left:50%;top:10px;width:112px;height:32px;margin-left:-56px;border-radius:20px;background:#000;z-index:60}
+#status{position:absolute;left:0;right:0;top:0;height:48px;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:6px 30px 0;font:600 15px Inter;color:#fff}
+.wall{position:absolute;inset:0;background:radial-gradient(120% 80% at 20% 10%,#35525c,#1b2831 55%,#2b2740)}
+.icons{position:absolute;left:24px;right:24px;top:84px;display:grid;grid-template-columns:repeat(4,1fr);gap:26px 0;justify-items:center}
+.ic{width:62px;text-align:center}
+.ic i{display:block;width:62px;height:62px;border-radius:15px}
+.ic b{display:block;margin:7px auto 0;width:40px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
+.ic.me i{background:#231f18;display:grid;place-items:center;font:700 25px Fraunces;color:#f6f2e8;box-shadow:inset 0 -6px 0 -3px #f0b070}
+.ic.me b{background:none;height:auto;width:auto;font:500 11px Inter;color:#fff;margin-top:6px}
+.dock{position:absolute;left:18px;right:18px;bottom:18px;height:84px;border-radius:30px;background:rgba(255,255,255,.18)}
+
+/* widget page inside the phone */
+.wp{position:absolute;overflow:hidden;background:#14181a;color:#f6f2e8}
+.wp .photo{position:absolute;inset:0;background:url(bg.jpg) center 30%/cover;transform:scale(1.06)}
+.wp .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,12,13,.55),rgba(10,12,13,.35) 40%,rgba(10,12,13,.85))}
+.wp .in{position:absolute;left:0;right:0;top:0;padding:56px 16px 20px}
+.wp header{display:flex;align-items:baseline;margin-bottom:14px;padding:0 4px}
+.wp header b{font:600 13px Inter;letter-spacing:.14em;color:#f0b070}
+.wp header span{font-size:12px;color:#c9c6bb;margin-right:auto;margin-left:10px}
+.wp header button{font:500 12px Inter;color:#f6f2e8;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:6px 13px}
+.wp .panel{margin-bottom:12px;padding:14px;border-radius:22px;background:rgba(20,24,26,.62);border:1px solid rgba(255,255,255,.16);overflow:hidden}
+.wp .pt{font:600 14px Inter;margin-bottom:10px}
+.wp .seg{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:99px;background:rgba(255,255,255,.08)}
+.wp .seg i{position:absolute;top:4px;bottom:4px;left:4px;width:calc((100% - 16px)/3);border-radius:99px;background:#f0b070}
+.wp .seg span{position:relative;text-align:center;font:500 13px Inter;color:#c9c6bb;padding:8px 4px}
+.wp .seg span.on{color:#231f18}
+.wp .opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.wp .opts span{font:400 13px Inter;border:1px solid rgba(255,255,255,.16);border-radius:99px;padding:7px 12px}
+.wp .opts span.on{border-color:#f0b070;background:rgba(240,176,112,.16)}
+.wp .hint{margin-top:10px;font-size:12px;color:#c9c6bb}
+.wp .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.wp .tile{position:relative;overflow:hidden;border-radius:24px;padding:16px 16px 12px;min-height:188px;background:linear-gradient(160deg,rgba(255,255,255,.12),rgba(255,255,255,.03)),rgba(20,24,26,.52);border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 30px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.12)}
+.wp .tile.hero{grid-column:1/-1;min-height:210px}
+.wp .label{font:500 12px Inter;letter-spacing:.04em;color:#c9c6bb;text-transform:uppercase}
+.wp .value{white-space:nowrap;font:600 25px/1.1 Fraunces;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin-top:8px}
+.wp .hero .value{font-size:52px}
+.wp .delta{display:inline-block;margin-top:6px;font:600 12.5px Inter;padding:2px 9px;border-radius:99px}
+.wp .delta.up{color:#ffb877;background:rgba(255,184,119,.14)}.wp .delta.down{color:#9be0ab;background:rgba(155,224,171,.14)}
+.wp .when{position:absolute;left:16px;bottom:12px;font:400 11px Inter;color:#c9c6bb}
+.wp svg.spark{position:absolute;left:0;right:0;bottom:26px;width:100%;height:38px}
+.wp .hero svg.spark{height:78px}
+
+/* browser chrome */
+#bbar{position:absolute;left:0;right:0;bottom:0;height:96px;background:rgba(246,244,240,.96);z-index:40}
+#url{position:absolute;left:14px;right:14px;top:10px;height:42px;border-radius:14px;background:rgba(120,120,128,.14);display:flex;align-items:center;justify-content:center;font:400 14.5px Inter;color:#1a1a1a;white-space:nowrap}
+#tools{position:absolute;left:0;right:0;top:56px;display:flex;justify-content:space-around;padding:0 24px;color:#3478f6}
+#tools svg{width:24px;height:24px}
+#sheet{position:absolute;left:0;right:0;bottom:0;height:430px;border-radius:26px 26px 0 0;background:#f2f2f6;z-index:70;padding:16px 14px;color:#111}
+#sheet .grab{width:38px;height:5px;border-radius:3px;background:#c7c7cc;margin:0 auto 14px}
+#sheet .hd{display:flex;gap:12px;align-items:center;padding:6px 8px 14px;border-bottom:1px solid #d8d8dc}
+#sheet .hd i{width:44px;height:44px;border-radius:11px;background:#231f18;display:grid;place-items:center;font:700 19px Fraunces;color:#f6f2e8;font-style:normal}
+#sheet .hd b{display:block;font:600 14px Inter}#sheet .hd small{font:400 12px Inter;color:#6b6b70}
+#sheet .row{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding:14px 16px;border-radius:14px;background:#fff;font:400 15px Inter}
+#sheet .row.hl{outline:2px solid #3478f6;outline-offset:-2px;background:#eaf1ff}
+#scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:65}
+.tap{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:rgba(240,176,112,.5);border:2px solid rgba(255,255,255,.85);z-index:90;pointer-events:none}
+
+.android .dock{left:16px;right:16px;bottom:22px;height:50px;border-radius:26px;background:rgba(255,255,255,.88)}
+.android #notch{width:15px;height:15px;margin-left:-7px;top:14px;border-radius:50%}
+.android .ic i{border-radius:50%}
+.android #status{font-weight:500}
+#abar{position:absolute;left:0;right:0;top:0;height:104px;background:#fff;z-index:40;display:none}
+#aurl{position:absolute;left:12px;right:52px;top:50px;height:44px;border-radius:22px;background:#eef0f4;display:flex;align-items:center;padding:0 16px;font:400 14.5px Inter;color:#1a1a1a;white-space:nowrap;overflow:hidden}
+#dots{position:absolute;right:10px;top:55px;width:34px;height:34px;display:grid;place-items:center;font:700 22px Inter;color:#444}
+#menu{position:absolute;right:10px;top:92px;width:250px;border-radius:16px;background:#fff;z-index:70;box-shadow:0 8px 30px rgba(0,0,0,.35);padding:8px 0;display:none;transform-origin:100% 0}
+#menu div{padding:13px 20px;font:400 15px Inter;color:#1a1a1a}
+#menu div.hl{background:#e3ecff;color:#0b57d0;font-weight:500}
+#dialog{position:absolute;left:28px;right:28px;top:300px;border-radius:28px;background:#fff;z-index:80;padding:24px;display:none;color:#1a1a1a}
+#dialog .t{font:500 20px Inter}
+#dialog .a{display:flex;gap:14px;align-items:center;margin-top:18px}
+#dialog .a i{width:48px;height:48px;border-radius:50%;background:#231f18;display:grid;place-items:center;font:700 20px Fraunces;color:#f6f2e8;font-style:normal;box-shadow:inset 0 -6px 0 -3px #f0b070}
+#dialog .a b{display:block;font:500 15px Inter}#dialog .a small{font:400 13px Inter;color:#5f6368}
+#dialog .b{display:flex;justify-content:flex-end;gap:22px;margin-top:26px;font:500 15px Inter;color:#0b57d0}
+#dialog .b span.go{background:#0b57d0;color:#fff;padding:9px 20px;border-radius:20px}
+#end{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:var(--bg)}
+#end-name{font:300 190px/1 Fraunces;letter-spacing:-.03em;margin-top:34px;height:200px}
+#end-tag{font:400 50px/1.35 Inter;color:var(--fg);max-width:860px;margin-top:30px}
+#end-tag b{color:var(--accent);font-weight:600}
+#end-url{font:500 32px 'JetBrains Mono';color:var(--accent);margin-top:56px;height:44px;white-space:nowrap}
+#end-by{font:400 24px 'JetBrains Mono';color:var(--muted);margin-top:26px;letter-spacing:.06em}
+</style></head>
+<body>
+<div id="stage">
+  <div id="bgwrap" class="abs" style="inset:0;overflow:hidden"><img id="bgimg" src="bg.jpg"></div>
+  <div id="vig" class="abs"></div>
+  <div id="brand" class="abs"><svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="rgba(60,50,30,.07)" stroke="rgba(60,50,30,.28)"/><path d="M5 16.5 9.5 9l3 4.5L14.5 10 19 16.5Z" fill="oklch(0.46 0.12 150)"/></svg><span>bcrp</span></div>
+  <div id="eyebrow" class="abs"></div>
+  <div id="cap" class="abs"></div>
+
+  <div id="phone" class="abs"><div id="screen"><div id="ui">
+    <div class="wall" id="wall"><div class="icons" id="icons"></div><div class="dock"></div></div>
+    <div class="wp" id="wp"><div class="photo"></div><div class="shade"></div><div class="in" id="wpin"></div></div>
+    <div id="bbar"><div id="url"></div><div id="tools">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+      <svg id="share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 0L8 7m4-4 4 4M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M4 12h16M4 19h16" opacity="0"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg>
+    </div></div>
+    <div id="scrim"></div>
+    <div id="sheet"><div class="grab"></div>
+      <div class="hd"><i>S/</i><div><b>BCRP</b><small>bcrp-cli.vercel.app</small></div></div>
+      <div class="row"><span>Copiar</span><span>⧉</span></div>
+      <div class="row"><span>Agregar a marcadores</span><span>☆</span></div>
+      <div class="row" id="addrow"><span>Agregar a pantalla de inicio</span><span>＋</span></div>
+      <div class="row"><span>Imprimir</span><span>⎙</span></div>
+    </div>
+    <div id="abar"><div id="aurl"></div><div id="dots">⋮</div></div>
+    <div id="menu"><div>Nueva pestaña</div><div>Marcadores</div><div>Compartir…</div><div id="instrow">Instalar app</div><div>Configuración</div></div>
+    <div id="dialog"><div class="t">¿Instalar app?</div><div class="a"><i>S/</i><div><b>BCRP</b><small>bcrp-cli.vercel.app</small></div></div><div class="b"><span>Cancelar</span><span class="go" id="instbtn">Instalar</span></div></div>
+    <div id="status"><span>9:41</span><span>●●● 5G ▮</span></div><div id="notch"></div>
+    <div class="tap" id="tap" style="opacity:0"></div>
+  </div></div></div>
+
+  <div id="end" class="abs">
+    <svg id="end-mark" width="170" height="170" viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="22" height="22" rx="7" fill="rgba(60,50,30,.07)" stroke="rgba(60,50,30,.28)"/><path d="M5 16.5 9.5 9l3 4.5L14.5 10 19 16.5Z" fill="oklch(0.46 0.12 150)"/></svg>
+    <div id="end-name"></div>
+    <div id="end-tag">El dato oficial del <b>BCRP</b> en tu pantalla de inicio.</div>
+    <div id="end-url"></div>
+    <div id="end-by">gratis · no oficial · código abierto</div>
+  </div>
+</div>
+<script>
+const D = __DATA__;
+const DURATION = 26;
+const AND = D.plat === 'android';
+if (AND) document.body.classList.add('android');
+const $ = id => document.getElementById(id);
+const clamp = (x,a=0,b=1)=>Math.min(b,Math.max(a,x));
+const prog = (t,a,b)=>clamp((t-a)/(b-a));
+const eo = x=>1-Math.pow(1-x,3);
+const eio = x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+const eb = x=>{const c=1.70158,d=c+1;return 1+d*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+let seed=11; const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647};
+const CLICKS=[];
+function typer(text,t0,base=.052,jit=.05,strongEnd=false){
+  const times=[]; let t=t0;
+  for(const ch of text){ times.push(t); CLICKS.push({t,s:0}); t+=base+rnd()*jit+(ch===' '?.03:0); }
+  if(strongEnd) CLICKS.push({t:t+.12,s:1});
+  return {text,times,end:t};
+}
+const typed=(ty,t)=>{let n=0;while(n<ty.times.length&&ty.times[n]<=t)n++;return ty.text.slice(0,n)};
+const caret=(t)=>(Math.floor(t*2.2)%2===0);
+const esc = s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const topic = id => D.topics.find(x=>x.id===id);
+
+// ---- timeline ----
+const T_TITLE = typer("El dólar, siempre a la vista.",0.7,.05,.035);
+const T_URL = typer("bcrp-cli.vercel.app/widget/",3.4,.055,.04,true);
+const T_END = typer("bcrp",23.9,.12,.05);
+const T_ENDURL = typer("bcrp-cli.vercel.app/widget",24.5,.03,.02);
+CLICKS.push(...(AND?[{t:9.25,s:1},{t:10.2,s:1},{t:11.45,s:1}]:[{t:9.3,s:1},{t:11.25,s:1}]),{t:14.85,s:1},{t:18.05,s:1},{t:19.25,s:1},{t:21.25,s:1},{t:22.45,s:1});
+CLICKS.sort((a,b)=>a.t-b.t);
+window.CLICKS=CLICKS; window.DURATION=DURATION;
+
+const CAPS = [
+  {a:2.7,b:8.7,eb:'Paso 1 de 4',html:'Abre el <span class="ac">enlace</span>'},
+  {a:8.7,b:12.7,eb:'Paso 2 de 4',html:AND?'Toca <span class="ac">Instalar app</span>':'Agrégalo a tu <span class="ac">pantalla de inicio</span>'},
+  {a:12.7,b:17.4,eb:'Paso 3 de 4',html:'Ábrelo como <span class="ac">una app</span>'},
+  {a:17.4,b:23.3,eb:'Paso 4 de 4',html:'Tú eliges <span class="ac">qué ver</span>'},
+];
+
+// ---- home screen icons ----
+const COLORS=['#5b7c8d','#8d6b5b','#6b8d6e','#7d6b8d','#8d855b','#5b8d8a','#8d5b6b','#6b7c8d'];
+let ih=''; for(let i=0;i<20;i++){ if(i===9) ih+='<div class="ic me" id="me"><i>S/</i><b>BCRP</b></div>'; else ih+=`<div class="ic"><i style="background:${COLORS[i%COLORS.length]};opacity:.92"></i><b></b></div>`; }
+$('icons').innerHTML=ih;
+
+let sparkId=0;
+function spark(v,p){ // p: 0..1 how much of the line is drawn
+  if(!v||v.length<2||p<=0) return '';
+  const lo=Math.min(...v),hi=Math.max(...v),r=hi-lo||1;
+  const pts=v.map((y,i)=>[i/(v.length-1)*100,4+(1-(y-lo)/r)*32]);
+  const line=pts.map((q,i)=>(i?'L':'M')+q[0].toFixed(2)+' '+q[1].toFixed(2)).join(' ');
+  sparkId++;
+  return `<svg class="spark" viewBox="0 0 100 40" preserveAspectRatio="none"><defs><linearGradient id="g${sparkId}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b070" stop-opacity=".38"/><stop offset="1" stop-color="#f0b070" stop-opacity="0"/></linearGradient><clipPath id="c${sparkId}"><rect x="0" y="0" width="${(p*100).toFixed(2)}" height="40"/></clipPath></defs><g clip-path="url(#c${sparkId})"><path d="${line} L100 40 L0 40 Z" fill="url(#g${sparkId})" opacity="${eo(prog(p,.3,1))}"/><path d="${line}" fill="none" stroke="#f0b070" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></g></svg>`;
+}
+function countUp(t,t0,t1,display,value){ // animate the number part of "S/ 3.449"
+  const p=eo(prog(t,t0,t1));
+  const m=display.match(/^(\D*)([\d.,]+)(\D*)$/); if(!m) return display;
+  const dec=(m[2].split('.')[1]||'').length; const n=value*p;
+  return m[1]+n.toLocaleString('en-US',{minimumFractionDigits:dec,maximumFractionDigits:dec})+m[3];
+}
+function tileHtml(id,hero,t,t0){
+  const x=topic(id); const a=eo(prog(t,t0,t0+.55));
+  if(a<=0) return '';
+  const d=x.delta, flat=d&&parseFloat(d.text)===0;
+  const chip=!d?'':flat?'<span class="delta" style="background:rgba(255,255,255,.1);color:#c9c6bb">sin cambio</span>':`<span class="delta ${d.up?'up':'down'}">${d.up?'▲ ':'▼ '}${esc(d.text)}</span>`;
+  const sp=eo(prog(t,t0+.25,t0+1.6));
+  const val=hero?countUp(t,t0+.2,t0+1.2,x.display,x.value):x.display;
+  return `<div class="tile${hero?' hero':''}" style="opacity:${a};transform:translateY(${(1-a)*24}px)"><div class="label">${esc(x.label)}</div><div class="value">${esc(val)}</div><div>${chip}</div>${spark(x.spark,sp)}<div class="when">${esc(x.when)}</div></div>`;
+}
+
+// widget page state over time
+function wpHtml(t,withPage){
+  const tapElem=(c)=>c; // placeholder
+  const open = t>=18.1 && t<22.5 ? eo(prog(t,18.1,18.5)) : t>=22.5 ? 1-eio(prog(t,22.5,22.95)) : 0;
+  const mode = t<19.3 ? 0 : 1; // 0 = solo uno, 1 = varios
+  const segX = eio(prog(t,19.25,19.55)); // 0 -> uno, 1 -> varios
+  const gold = t>=21.3;
+  const ids = ['fx']; // hero first
+  let h=`<header><b>BCRP</b><span>al ${esc(D.updated)}</span><button id="bpick">${open>.5?'Listo':'Elegir'}</button></header>`;
+  if(open>0.01){
+    const labels = mode===0 ? ['fx'] : ['fx','euro','inflation'].concat(gold?['gold']:[]);
+    const all=['fx','euro','inflation','rate','reserves','gdp','unemployment','gold','copper','silver'];
+    const chips=all.map(id=>{const lb=({fx:'Dólar',euro:'Euro',inflation:'Inflación',rate:'Tasa de referencia',reserves:'Reservas internacionales netas',gdp:'PBI',unemployment:'Desempleo en Lima',gold:'Oro',copper:'Cobre',silver:'Plata',PD04640PD:'Dólar en bancos (venta)',PD04639PD:'Dólar en bancos (compra)'})[id]||id; return `<span id="chip-${id}" class="${labels.includes(id)?'on':''}">${lb}</span>`;}).join('');
+    h+=`<div class="panel" style="opacity:${open};max-height:${open*330}px;margin-bottom:${12*open}px;padding-top:${14*open}px;padding-bottom:${14*open}px"><div class="pt">¿Qué quieres ver?</div><div class="seg"><i style="left:${4+segX*((100/3))}%;transform:translateX(${-segX*4*1.3}px)"></i><span id="sg-uno" class="${mode===0?'on':''}">Solo uno</span><span id="sg-varios" class="${mode===1?'on':''}">Varios</span><span id="sg-todos">Todos</span></div><div class="opts">${chips}</div><div class="hint">${mode===0?'Se muestra una sola ficha, grande.':'Toca para sumar o quitar. Mínimo una.'}</div></div>`;
+  }
+  let tiles = tileHtml('fx',true,t,withPage.t0);
+  if(t>=19.9) tiles+=tileHtml('euro',false,t,19.9);
+  if(t>=20.1) tiles+=tileHtml('inflation',false,t,20.1);
+  if(t>=21.55) tiles+=tileHtml('gold',false,t,21.55);
+  h+=`<div class="grid">${tiles}</div>`;
+  return h;
+}
+
+function tapAt(t,t0,el){
+  const tp=$('tap'); const p=prog(t,t0,t0+.55);
+  if(!el||p<=0||p>=1){ tp.style.opacity=0; return; }
+  const r=el.getBoundingClientRect(), u=$('ui').getBoundingClientRect(), k=1.6;
+  tp.style.left=((r.left+r.width/2-u.left)/k)+'px'; tp.style.top=((r.top+r.height/2-u.top)/k)+'px';
+  tp.style.opacity=Math.sin(Math.PI*p)*.95; tp.style.transform=`scale(${.6+.9*p})`;
+}
+
+function seek(t){
+  const fadeAll=1-prog(t,25.6,26);
+  $('stage').style.opacity=prog(t,0,.4)*fadeAll;
+  $('bgimg').style.transform=`scale(${1+.05*t/DURATION})`;
+  $('brand').style.opacity=eo(prog(t,.2,.8))*(1-prog(t,23.2,23.6));
+
+  // caption + eyebrow
+  const tt=typed(T_TITLE,t);
+  let capHtml='', capO=0, ebTxt='', ebO=0;
+  if(t<2.6){ capHtml=tt.replace(/&/g,'&amp;')+(tt.length<T_TITLE.text.length||caret(t)?'<span class="cur" style="width:.38em"></span>':''); capO=1; ebTxt='BCRP · widget'; ebO=eo(prog(t,.4,.9)); }
+  for(const c of CAPS){ if(t>=c.a-.1&&t<c.b){ const i=eo(prog(t,c.a,c.a+.5)), o=1-eo(prog(t,c.b-.35,c.b)); capHtml=c.html; capO=i*o; ebTxt=c.eb; ebO=i*o; $('cap').style.transform=`translateY(${(1-i)*26}px)`; } }
+  if(t<2.6 || t>=23.3) $('cap').style.transform='none';
+  if(t>=2.6&&t<2.7){ capO=0; }
+  $('cap').innerHTML=capHtml; $('cap').style.opacity=t<2.6?(1-eo(prog(t,2.3,2.6))):capO;
+  $('eyebrow').textContent=ebTxt; $('eyebrow').style.opacity=t<2.6?ebO*(1-eo(prog(t,2.3,2.6))):ebO;
+
+  // phone entrance / exit
+  const pin=eb(prog(t,1.9,2.9)), pout=eio(prog(t,23.0,23.6));
+  $('phone').style.opacity=eo(prog(t,1.9,2.5))*(1-pout);
+  $('phone').style.transform=`translateY(${(1-pin)*260+pout*120}px) scale(${.96+.04*pin})`;
+
+  // ---------- screen content ----------
+  const wp=$('wp'), bbar=$('bbar'), wall=$('wall'), sheet=$('sheet'), scrim=$('scrim');
+  // phases: 0 browser (2.7-12.2), 1 home (12.2-15.0), 2 app (15.0-23.3)
+  let tapEl=null, tapT=0;
+  // browser URL
+  const urlTxt=typed(T_URL,t); const typing=urlTxt.length<T_URL.text.length;
+  let urlHtml=(t<T_URL.end+.2 ? esc(urlTxt)+(t>3.2&&(caret(t)||typing)?'<span style="display:inline-block;width:2px;height:17px;background:#3478f6;margin-left:1px;vertical-align:-3px"></span>':'') : '<span style="color:#6b6b70">🔒 </span>bcrp-cli.vercel.app');
+  if(t<T_URL.end+.2 && urlTxt.length===0) urlHtml='<span style="color:#9a9aa0">Buscar o escribir sitio web</span>';
+  $('url').innerHTML=urlHtml; $('aurl').innerHTML=urlHtml;
+  const inBrowser = t<12.2;
+  const inApp = t>=15.0;
+  const pageT0 = T_URL.end+.5;       // page loads after Enter
+
+  // wall
+  wall.style.opacity = (t>=11.8&&t<15.6)?1:(t>=15.6?0:0);
+  wall.style.display = (t>=11.8&&t<15.9)?'block':'none';
+  // browser/app page placement
+  wp.style.display='block';
+  if(inBrowser){
+    wp.style.left='0'; wp.style.top=AND?'104px':'0'; wp.style.width='390px'; wp.style.height=AND?'711px':'719px'; wp.style.borderRadius='0'; wp.style.transform='none';
+    bbar.style.display=AND?'none':'block'; $('abar').style.display=AND?'block':'none'; wp.style.opacity = t<pageT0-.1?0:eo(prog(t,pageT0,pageT0+.5));
+    if(t<pageT0){ $('wpin').innerHTML=''; wp.style.background='#14181a'; }
+  } else if(t<15.0){ // home screen: hide page
+    wp.style.opacity=0; bbar.style.display='none'; $('abar').style.display='none';
+  }
+  if(inApp){
+    bbar.style.display='none'; $('abar').style.display='none';
+    const m=$('me').getBoundingClientRect(), u=$('ui').getBoundingClientRect(), k=1.6;
+    const cx=(m.left+m.width/2-u.left)/k, cy=(m.top+m.height/2-u.top)/k - 6;
+    const o=eo(prog(t,15.0,15.7));
+    const sc=.16+.84*o;
+    wp.style.left='0'; wp.style.top='0'; wp.style.width='390px'; wp.style.height='815px';
+    wp.style.opacity=clamp(prog(t,15.0,15.25));
+    wp.style.borderRadius=((1-o)*120)+'px';
+    wp.style.transformOrigin=`${cx}px ${cy}px`;
+    wp.style.transform=`scale(${sc})`;
+  }
+  // widget page content
+  const wpT0 = inApp ? 15.45 : pageT0+.1;
+  if(!(inBrowser&&t<pageT0) && !(t>=12.2&&t<15.0)){
+    $('wpin').innerHTML=wpHtml(inApp?t:Math.min(t,12.0),{t0:wpT0});
+    $('wpin').style.paddingTop = inApp?'56px':'56px';
+  }
+  // in the browser the page stays visible until the wall comes in
+  if(inBrowser){ wp.style.opacity = (t<pageT0?0:eo(prog(t,pageT0,pageT0+.5))) * (1-eo(prog(t,11.7,12.2))); }
+
+  // share sheet
+  const sIn=eb(prog(t,9.3,9.85)), sOut=eio(prog(t,11.45,11.9));
+  const sOn=t>=9.25&&t<11.95;
+  const mOn=AND&&t>=9.2&&t<10.95, dOn=AND&&t>=10.65&&t<11.75;
+  $('menu').style.display=mOn?'block':'none';
+  { const mp=eb(prog(t,9.2,9.6)); $('menu').style.opacity=eo(prog(t,9.2,9.45))*(1-eo(prog(t,10.7,10.95))); $('menu').style.transform=`scale(${.6+.4*Math.min(1,mp)})`; }
+  $('instrow').classList.toggle('hl',t>=9.95);
+  $('dialog').style.display=dOn?'block':'none';
+  { const dp=eb(prog(t,10.65,11.1)); $('dialog').style.opacity=eo(prog(t,10.65,10.95))*(1-eo(prog(t,11.55,11.75))); $('dialog').style.transform=`scale(${.9+.1*Math.min(1,dp)})`; }
+  sheet.style.display=(!AND&&sOn)?'block':'none'; scrim.style.display=((!AND&&sOn)||dOn)?'block':'none';
+  sheet.style.transform=`translateY(${(1-Math.min(1,sIn))*440+sOut*440}px)`;
+  scrim.style.opacity=AND?(eo(prog(t,10.65,10.95))*(1-eo(prog(t,11.55,11.75)))):eo(prog(t,9.3,9.7))*(1-sOut);
+  $('addrow').classList.toggle('hl', t>=10.9);
+
+  // wall icon pop + ripple
+  const me=$('me'); const pop=eb(prog(t,12.5,13.2));
+  me.style.transform=`scale(${t<12.5?0:pop})`; me.style.opacity=t<12.5?0:1;
+  $('status').style.color=(AND&&t<11.8)?'#1a1a1a':'#fff';
+  // taps
+  if(AND){
+    if(t>=8.95&&t<9.55){ tapEl=$('dots'); tapT=9.0; }
+    else if(t>=10.1&&t<10.7){ tapEl=$('instrow'); tapT=10.15; }
+    else if(t>=11.35&&t<11.95){ tapEl=$('instbtn'); tapT=11.4; }
+  } else if(t>=8.95&&t<9.55){ tapEl=$('share'); tapT=9.0; }
+  else if(t>=10.95&&t<11.55){ tapEl=$('addrow'); tapT=11.0; }
+  if(!tapEl && t>=14.35&&t<14.95){ tapEl=me; tapT=14.4; }
+  else if(t>=17.75&&t<18.35){ tapEl=$('bpick'); tapT=17.8; }
+  else if(t>=18.95&&t<19.55){ tapEl=$('sg-varios'); tapT=19.0; }
+  else if(t>=20.95&&t<21.55){ tapEl=$('chip-gold'); tapT=21.0; }
+  else if(t>=22.15&&t<22.75){ tapEl=$('bpick'); tapT=22.2; }
+  tapAt(t,tapT,tapEl);
+
+  // end card
+  const dIn=prog(t,23.4,23.9);
+  $('end').style.opacity=dIn; $('end').style.visibility=dIn<=0?'hidden':'visible';
+  const mk=eb(prog(t,23.4,24.1)); $('end-mark').style.transform=`scale(${.7+.3*mk})`;
+  const en=typed(T_END,t); $('end-name').innerHTML=en+((en.length&&en.length<4)?'<span class="cur" style="width:.3em;height:.75em"></span>':'');
+  $('end-tag').style.opacity=eo(prog(t,24.2,24.8)); $('end-tag').style.transform=`translateY(${(1-eo(prog(t,24.2,24.8)))*20}px)`;
+  const ut=typed(T_ENDURL,t); $('end-url').innerHTML=esc(ut)+((ut.length&&ut.length<T_ENDURL.text.length)?'<span class="cur" style="width:.5em;height:.9em"></span>':'');
+  $('end-by').style.opacity=eo(prog(t,25.0,25.5));
+}
+window.seek=seek;
+seek(0);
+</script></body></html>

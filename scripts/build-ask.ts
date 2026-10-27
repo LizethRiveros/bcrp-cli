@@ -16,7 +16,8 @@ import { fmtNumber } from "../src/format";
 import { SHORTCUTS } from "../src/shortcuts";
 
 interface Topic {
-  key: keyof typeof SHORTCUTS;
+  /** Shortcut name or BCRP series code */
+  key: string;
   /** Chip text and question the page answers */
   question: string;
   /** Short name shown above the figure */
@@ -49,6 +50,26 @@ const TOPICS: Topic[] = [
     prefix: "S/ ",
     explain: "Es cuántos soles cuesta un euro según el tipo de cambio de venta que publica el BCRP.",
     keywords: ["euro", "euros", "eur"],
+    last: 90,
+  },
+  {
+    key: "PD04640PD",
+    question: "¿A cuánto venden el dólar los bancos?",
+    label: "Dólar en bancos (venta)",
+    prefix: "S/ ",
+    explain:
+      "Es el precio al que los bancos venden un dólar, o sea, lo que pagas tú al comprar. Es el promedio ponderado del sistema bancario que publica la SBS. Cada banco y casa de cambio publica el suyo, un poco distinto.",
+    keywords: ["bancos", "banco", "ventanilla", "venden", "venta", "sistema bancario", "sbs", "casas de cambio"],
+    last: 90,
+  },
+  {
+    key: "PD04639PD",
+    question: "¿A cuánto compran el dólar los bancos?",
+    label: "Dólar en bancos (compra)",
+    prefix: "S/ ",
+    explain:
+      "Es el precio al que los bancos compran un dólar, o sea, lo que recibes tú al vender. Es el promedio ponderado del sistema bancario que publica la SBS. Cada banco y casa de cambio publica el suyo, un poco distinto.",
+    keywords: ["compran", "compra", "comprar"],
     last: 90,
   },
   {

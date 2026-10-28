@@ -217,19 +217,19 @@ footer p { max-width: 62rem; margin-bottom: .5rem; }
       <article class="cell">
         <h3>Dólar</h3>
         <p class="what">Tipo de cambio interbancario venta (S/ por US$)</p>
-        <div class="value">S/ 3.442</div>
-        <div class="when">26 oct 2026</div>
-        <div class="delta">▲ +0.65% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,21.23 3.45,22.51 6.90,24.95 10.34,25.74 13.79,27.12 17.24,28.00 20.69,26.55 24.14,19.40 27.59,14.72 31.03,10.94 34.48,5.91 37.93,4.30 41.38,7.76 44.83,2.00 48.28,6.14 51.72,9.04 55.17,7.04 58.62,3.07 62.07,2.00 65.52,5.93 68.97,6.21 72.41,5.88 75.86,8.75 79.31,8.74 82.76,5.84 86.21,8.04 89.66,7.34 93.10,3.88 96.55,3.35 100.00,5.05"/></svg>
+        <div class="value">S/ 3.450</div>
+        <div class="when">27 oct 2026</div>
+        <div class="delta">▲ +0.87% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,22.51 3.45,24.95 6.90,25.74 10.34,27.12 13.79,28.00 17.24,26.55 20.69,19.40 24.14,14.72 27.59,10.94 31.03,5.91 34.48,4.30 37.93,7.76 41.38,2.00 44.83,6.14 48.28,9.04 51.72,7.04 55.17,3.07 58.62,2.00 62.07,5.93 65.52,6.21 68.97,5.88 72.41,8.75 75.86,8.74 79.31,5.84 82.76,8.04 86.21,7.34 89.66,3.88 93.10,3.35 96.55,5.05 100.00,3.09"/></svg>
         <div class="src">Fuente: SBS, Reuters, Datatec, BCRP · <code>PD04638PD</code></div>
       </article>
       <article class="cell">
         <h3>Euro</h3>
         <p class="what">Tipo de cambio interbancario venta (S/ por euro)</p>
-        <div class="value">S/ 4.015</div>
-        <div class="when">26 oct 2026</div>
-        <div class="delta">▼ -0.94% en 1 mes</div>
-        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,2.00 3.45,24.29 6.90,22.98 10.34,7.62 13.79,25.39 17.24,17.86 20.69,26.80 24.14,18.26 27.59,24.79 31.03,7.72 34.48,7.72 37.93,22.58 41.38,2.20 44.83,3.61 48.28,4.31 51.72,12.94 55.17,25.19 58.62,7.92 62.07,28.00 65.52,26.39 68.97,26.39 72.41,24.19 75.86,27.30 79.31,9.63 82.76,8.53 86.21,13.54 89.66,25.99 93.10,23.78 96.55,7.52 100.00,11.54"/></svg>
+        <div class="value">S/ 3.874</div>
+        <div class="when">27 oct 2026</div>
+        <div class="delta">▼ -4.42% en 1 mes</div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><polyline points="0.00,24.26 3.45,22.94 6.90,7.46 10.34,25.37 13.79,17.78 17.24,26.79 20.69,18.19 24.14,24.76 27.59,7.56 31.03,7.56 34.48,22.54 37.93,2.00 41.38,3.42 44.83,4.12 48.28,12.82 51.72,25.17 55.17,7.77 58.62,28.00 62.07,26.38 65.52,26.38 68.97,24.16 72.41,27.29 75.86,9.49 79.31,8.37 82.76,13.43 86.21,25.98 89.66,23.75 93.10,7.36 96.55,11.41 100.00,25.67"/></svg>
         <div class="src">Fuente: SBS, Reuters, Datatec, BCRP · <code>PD04648PD</code></div>
       </article>
       <article class="cell">
@@ -317,7 +317,7 @@ $ bcrp compare inflation gdp --last 4</pre>
         <div class="row">
           <div><h3>Convertir y avisar</h3><p>Dólares y euros a soles con el tipo de cambio oficial, y alertas para tus scripts.</p></div>
 <pre>$ bcrp convert 100 usd
-100.00 USD = 344.23 PEN
+100.00 USD = 344.97 PEN
 
 $ bcrp check fx --above 3.50 &amp;&amp; notify</pre>
         </div>
@@ -371,7 +371,7 @@ $ bcrp fx | jq .value</pre>
 
 <script>
 (function () {
-  var SCENES = [{"cmd":"bcrp fx","out":["Tipo de cambio - TC Interbancario (S/ por US$) - Venta","PD04638PD · daily","Source: SBS, Reuters, Datatec, BCRP","","2026-10-26  3.442"]},{"cmd":"bcrp euro","out":["Tipo de cambio - TC Euro (S/ por Euro) - Venta","PD04648PD · daily","Source: SBS, Reuters, Datatec, BCRP","","2026-10-26  4.015"]},{"cmd":"bcrp convert 100 usd","out":["100.00 USD = 344.23 PEN","Rate: 3.442 S/ per US$ · interbank sell · 2026-10-26","PD04638PD · Source: SBS, Reuters, Datatec, BCRP"]},{"cmd":"bcrp inflation","out":["Índice de precios Lima Metropolitana (var% 12 meses) - IPC","PN01273PM · monthly","Source: INEI","","2026-09  4.55"]}];
+  var SCENES = [{"cmd":"bcrp fx","out":["Tipo de cambio - TC Interbancario (S/ por US$) - Venta","PD04638PD · daily","Source: SBS, Reuters, Datatec, BCRP","","2026-10-27  3.450"]},{"cmd":"bcrp euro","out":["Tipo de cambio - TC Euro (S/ por Euro) - Venta","PD04648PD · daily","Source: SBS, Reuters, Datatec, BCRP","","2026-10-27  3.874"]},{"cmd":"bcrp convert 100 usd","out":["100.00 USD = 344.97 PEN","Rate: 3.450 S/ per US$ · interbank sell · 2026-10-27","PD04638PD · Source: SBS, Reuters, Datatec, BCRP"]},{"cmd":"bcrp inflation","out":["Índice de precios Lima Metropolitana (var% 12 meses) - IPC","PN01273PM · monthly","Source: INEI","","2026-09  4.55"]}];
   var term = document.getElementById("term");
   var soundBtn = document.getElementById("sound");
   if (!term || !SCENES.length) return;
